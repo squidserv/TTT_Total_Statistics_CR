@@ -43,8 +43,9 @@ end
 
 local function AddNewPlayer(ID, nick)
 	PlayerStats[ID] = {}
+	local rolestring = ""
 	for r = 0, ROLE_MAX do
-		local rolestring = ROLE_STRINGS[r]
+		rolestring = ROLE_STRINGS[r]
 		PlayerStats[ID][rolestring..'Rounds'] = 0
 		PlayerStats[ID][rolestring..'Wins'] = 0
 	end
@@ -168,7 +169,7 @@ hook.Add("TTTEndRound", "TotalStatistics_EndOfRoundLogic", function(result)
 
 			--role plays and wins capture
 			PlayerStats[v:SteamID()].TotalRoundsPlayed = PlayerStats[v:SteamID()].TotalRoundsPlayed + 1
-			local rolestring
+			local rolestring = ""
 			for r = 0, ROLE_MAX do
 				if StartingRoles[v:SteamID()] == r  then
 					rolestring = ROLE_STRINGS[r]

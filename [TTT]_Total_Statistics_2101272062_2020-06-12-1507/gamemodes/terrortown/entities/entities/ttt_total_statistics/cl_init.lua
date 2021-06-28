@@ -47,7 +47,7 @@ net.Receive("TotalStatistics_PlayerStatsMessage", function()
 end)
 
 local function DisplayWindow()
-	
+
 	GetPlayerData()
 
 	local MainWindow = vgui.Create("DFrame")
@@ -55,7 +55,7 @@ local function DisplayWindow()
 	MainWindow:SetPos(ScrW() - 410, ScrH() - 495)
 	MainWindow:SetSize(400, 425)
 	MainWindow:SetDeleteOnClose(true)
-	function MainWindow:OnClose() 
+	function MainWindow:OnClose()
 		gui.EnableScreenClicker(false)
 	end
 
@@ -66,7 +66,7 @@ local function DisplayWindow()
 	DataDisplay:AddColumn("", 1)
 	DataDisplay:AddColumn("", 2)
 	DataDisplay:SetSortable(true)
-	
+
 	local RefreshButton = vgui.Create("DButton", MainWindow)
 	RefreshButton:SetText("Refresh window")
 	RefreshButton:SetPos(MainWindow:GetWide()-115, MainWindow:GetTall()-45)
@@ -87,13 +87,13 @@ local function DisplayWindow()
 	StatisticLabel:SetText("Select statistic:")
 	StatisticLabel:SetPos(20, 35)
 	StatisticLabel:SetSize(90, 25)
-	
+
 	local RoleLabel = vgui.Create("DLabel", MainWindow)
 	RoleLabel:SetText("Select role:")
 	RoleLabel:SetPos(20, 65)
 	RoleLabel:SetSize(90, 25)
 	RoleLabel:Hide()
-	
+
 	local RoleDropdown = vgui.Create("DComboBox", MainWindow)
 	RoleDropdown:SetText("")
 	RoleDropdown:SetPos(110, 65)
@@ -102,96 +102,25 @@ local function DisplayWindow()
 	RoleDropdown:AddChoice("Detective")
 	RoleDropdown:AddChoice("Innocent")
 	RoleDropdown:AddChoice("Traitor")
+	local rolestring
+	local rolestring_cap
 	if CustomRolesEnabled then
-		RoleDropdown:AddChoice("Assassin")
-		RoleDropdown:AddChoice("Hypnotist")
-		RoleDropdown:AddChoice("Vampire")
-		RoleDropdown:AddChoice("Zombie")
-		RoleDropdown:AddChoice("Mercenary")
-		RoleDropdown:AddChoice("Phantom")
-		RoleDropdown:AddChoice("Glitch")
-		RoleDropdown:AddChoice("Jester")
-		RoleDropdown:AddChoice("Swapper")
-		RoleDropdown:AddChoice("Killer")
+		for r = 3, ROLE_MAX do
+			rolestring = ROLE_STRINGS[r]
+			rolestring = rolestring:sub(1, 1):upper() .. rolestring:sub(2)
+			RoleDropdown:AddChoice(rolestring)
+		end
 	end
 	RoleDropdown.OnSelect = function(index, value, str)
 		DataDisplay:Clear()
-		if str == "Detective" then
-			for id, record in pairs(PlayerStats) do
-				DataDisplay:AddLine(record.Nickname, math.Round(record.DetectiveWins/record.DetectiveRounds*100, 1))
-				DataDisplay:SortByColumn(2, true)
-			end
-		
-		elseif str == "Innocent" then
-			for id, record in pairs(PlayerStats) do
-				DataDisplay:AddLine(record.Nickname, math.Round(record.InnocentWins/record.InnocentRounds*100, 1))
-				DataDisplay:SortByColumn(2, true)
-			end
-		
-		elseif str == "Traitor" then
-			for id, record in pairs(PlayerStats) do
-				DataDisplay:AddLine(record.Nickname, math.Round(record.TraitorWins/record.TraitorRounds*100, 1))
-				DataDisplay:SortByColumn(2, true)
-			end
-		
-		elseif str == "Assassin" then
-			for id, record in pairs(PlayerStats) do
-				DataDisplay:AddLine(record.Nickname, math.Round(record.AssassinWins/record.AssassinRounds*100, 1))
-				DataDisplay:SortByColumn(2, true)
-			end
-		
-		elseif str == "Hypnotist" then
-			for id, record in pairs(PlayerStats) do
-				DataDisplay:AddLine(record.Nickname, math.Round(record.HypnotistWins/record.HypnotistRounds*100, 1))
-				DataDisplay:SortByColumn(2, true)
-			end
-		
-		elseif str == "Vampire" then
-			for id, record in pairs(PlayerStats) do
-				DataDisplay:AddLine(record.Nickname, math.Round(record.VampireWins/record.VampireRounds*100, 1))
-				DataDisplay:SortByColumn(2, true)
-			end
-		
-		elseif str == "Zombie" then
-			for id, record in pairs(PlayerStats) do
-				DataDisplay:AddLine(record.Nickname, math.Round(record.ZombieWins/record.ZombieRounds*100, 1))
-				DataDisplay:SortByColumn(2, true)
-			end
-		
-		elseif str == "Mercenary" then
-			for id, record in pairs(PlayerStats) do
-				DataDisplay:AddLine(record.Nickname, math.Round(record.MercenaryWins/record.MercenaryRounds*100, 1))
-				DataDisplay:SortByColumn(2, true)
-			end
-		
-		elseif str == "Phantom" then
-			for id, record in pairs(PlayerStats) do
-				DataDisplay:AddLine(record.Nickname, math.Round(record.PhantomWins/record.PhantomRounds*100, 1))
-				DataDisplay:SortByColumn(2, true)
-			end
-		
-		elseif str == "Glitch" then
-			for id, record in pairs(PlayerStats) do
-				DataDisplay:AddLine(record.Nickname, math.Round(record.GlitchWins/record.GlitchRounds*100, 1))
-				DataDisplay:SortByColumn(2, true)
-			end
-		
-		elseif str == "Jester" then
-			for id, record in pairs(PlayerStats) do
-				DataDisplay:AddLine(record.Nickname, math.Round(record.JesterWins/record.JesterRounds*100, 1))
-				DataDisplay:SortByColumn(2, true)
-			end
-		
-		elseif str == "Swapper" then
-			for id, record in pairs(PlayerStats) do
-				DataDisplay:AddLine(record.Nickname, math.Round(record.SwapperWins/record.SwapperRounds*100, 1))
-				DataDisplay:SortByColumn(2, true)
-			end
-		
-		elseif str == "Killer" then
-			for id, record in pairs(PlayerStats) do
-				DataDisplay:AddLine(record.Nickname, math.Round(record.KillerWins/record.KillerRounds*100, 1))
-				DataDisplay:SortByColumn(2, true)
+		for r = 0, ROLE_MAX do
+			rolestring = ROLE_STRINGS[r]
+			rolestring_cap = rolestring:sub(1, 1):upper() .. rolestring:sub(2)
+			if str == rolestring_cap then
+				for id, record in pairs(PlayerStats) do
+					DataDisplay:AddLine(record.Nickname, math.Round(record[rolestring..'Wins']/record[rolestring..'Rounds']*100, 1))
+					DataDisplay:SortByColumn(2, true)
+				end
 			end
 		end
 	end
@@ -227,16 +156,11 @@ local function DisplayWindow()
 			if(CustomRolesEnabled) then
 				for id, record in pairs(PlayerStats) do
 					if(id==LocalPlayer():SteamID()) then
-						DataDisplay:AddLine("Assassin", math.Round(record.AssassinWins/record.AssassinRounds*100), 1)
-						DataDisplay:AddLine("Hypnotist", math.Round(record.HypnotistWins/record.HypnotistRounds*100), 1)
-						DataDisplay:AddLine("Vampire", math.Round(record.VampireWins/record.VampireRounds*100), 1)
-						DataDisplay:AddLine("Zombie", math.Round(record.ZombieWins/record.ZombieRounds*100), 1)
-						DataDisplay:AddLine("Mercenary", math.Round(record.MercenaryWins/record.MercenaryRounds*100), 1)
-						DataDisplay:AddLine("Phantom", math.Round(record.PhantomWins/record.PhantomRounds*100), 1)
-						DataDisplay:AddLine("Glitch", math.Round(record.GlitchWins/record.GlitchRounds*100), 1)
-						DataDisplay:AddLine("Jester", math.Round(record.JesterWins/record.JesterRounds*100), 1)
-						DataDisplay:AddLine("Swapper", math.Round(record.SwapperWins/record.SwapperRounds*100), 1)
-						DataDisplay:AddLine("Killer", math.Round(record.KillerWins/record.KillerRounds*100), 1)
+						for r = 0, ROLE_MAX do
+							rolestring = ROLE_STRINGS[r]
+							rolestring_cap = rolestring:sub(1, 1):upper() .. rolestring:sub(2)
+							DataDisplay:AddLine(rolestring_cap, math.Round(record[rolestring..'Wins']/record[rolestring..'Rounds']*100), 1)
+						end
 					end
 				end
 			end
@@ -253,16 +177,13 @@ local function DisplayWindow()
 			if(CustomRolesEnabled) then
 				for id, record in pairs(PlayerStats) do
 					if(id==LocalPlayer():SteamID()) then
-						DataDisplay:AddLine("Assassin", record.AssassinRounds.."/"..record.TotalRoundsPlayed)
-						DataDisplay:AddLine("Hypnotist", record.HypnotistRounds.."/"..record.TotalRoundsPlayed)
-						DataDisplay:AddLine("Vampire", record.VampireRounds.."/"..record.TotalRoundsPlayed)
-						DataDisplay:AddLine("Zombie", record.ZombieRounds.."/"..record.TotalRoundsPlayed)
-						DataDisplay:AddLine("Mercenary", record.MercenaryRounds.."/"..record.TotalRoundsPlayed)
-						DataDisplay:AddLine("Phantom", record.PhantomRounds.."/"..record.TotalRoundsPlayed)
-						DataDisplay:AddLine("Glitch", record.GlitchRounds.."/"..record.TotalRoundsPlayed)
-						DataDisplay:AddLine("Jester", record.JesterRounds.."/"..record.TotalRoundsPlayed)
-						DataDisplay:AddLine("Swapper", record.SwapperRounds.."/"..record.TotalRoundsPlayed)
-						DataDisplay:AddLine("Killer", record.KillerRounds.."/"..record.TotalRoundsPlayed)
+						if(id==LocalPlayer():SteamID()) then
+							for r = 0, ROLE_MAX do
+								rolestring = ROLE_STRINGS[r]
+								rolestring_cap = rolestring:sub(1, 1):upper() .. rolestring:sub(2)
+								DataDisplay:AddLine(rolestring_caps, record[rolestring..'Rounds'].."/"..record.TotalRoundsPlayed)
+							end
+						end
 					end
 				end
 			end
@@ -353,48 +274,20 @@ local function DisplayWindow()
 			DataDisplay:AddLine("Traitor", AvgTRate)
 			
 			if(CustomRolesEnabled) then
-				local AvgARate = 0
-				local AvgHRate = 0
-				local AvgVRate = 0
-				local AvgZRate = 0
-				local AvgMRate = 0
-				local AvgPRate = 0
-				local AvgGRate = 0
-				local AvgJRate = 0
-				local AvgSRate = 0
-				local AvgKRate = 0
-				for id, record in pairs(PlayerStats) do
-					AvgARate = AvgARate + (record.AssassinWins/record.AssassinRounds*100)
-					AvgHRate = AvgHRate + (record.HypnotistWins/record.HypnotistRounds*100)
-					AvgVRate = AvgVRate + (record.VampireWins/record.VampireRounds*100)
-					AvgZRate = AvgZRate + (record.ZombieWins/record.ZombieRounds*100)
-					AvgMRate = AvgMRate + (record.MercenaryWins/record.MercenaryRounds*100)
-					AvgPRate = AvgPRate + (record.PhantomWins/record.PhantomRounds*100)
-					AvgGRate = AvgGRate + (record.GlitchWins/record.GlitchRounds*100)
-					AvgJRate = AvgJRate + (record.JesterWins/record.JesterRounds*100)
-					AvgSRate = AvgSRate + (record.SwapperWins/record.SwapperRounds*100)
-					AvgKRate = AvgKRate + (record.KillerWins/record.KillerRounds*100)
+				local AvgRate = {}
+				local sRolestring = ""
+				for r = 0, ROLE_MAX do
+					sRolestring = ROLE_STRINGS_SHORT[r]
+					rolestring = ROLE_STRINGS[r]
+					rolestring_cap = rolestring:sub(1, 1):upper() .. rolestring:sub(2)
+					AvgRate[sRolestring] = 0
+					for id, record in pairs(PlayerStats) do
+						AvgRate[sRolestring] = AvgRate[sRolestring] +
+								(record[rolestring..'Wins']/record[rolestring..'Rounds']*100)
+					end
+					AvgRate[sRolestring] = math.Round(AvgRate[sRolestring] / table.Count(PlayerStats), 1)
+					DataDisplay:AddLine(rolestring_cap, AvgRate[sRolestring])
 				end
-				AvgARate = math.Round(AvgARate / table.Count(PlayerStats), 1)
-				AvgHRate = math.Round(AvgHRate / table.Count(PlayerStats), 1)
-				AvgVRate = math.Round(AvgVRate / table.Count(PlayerStats), 1)
-				AvgZRate = math.Round(AvgZRate / table.Count(PlayerStats), 1)
-				AvgMRate = math.Round(AvgMRate / table.Count(PlayerStats), 1)
-				AvgPRate = math.Round(AvgPRate / table.Count(PlayerStats), 1)
-				AvgGRate = math.Round(AvgGRate / table.Count(PlayerStats), 1)
-				AvgJRate = math.Round(AvgJRate / table.Count(PlayerStats), 1)
-				AvgSRate = math.Round(AvgSRate / table.Count(PlayerStats), 1)
-				AvgKRate = math.Round(AvgKRate / table.Count(PlayerStats), 1)
-				DataDisplay:AddLine("Assassin", AvgARate)
-				DataDisplay:AddLine("Hypnotist", AvgHRate)
-				DataDisplay:AddLine("Vampire", AvgVRate)
-				DataDisplay:AddLine("Zombie", AvgZRate)
-				DataDisplay:AddLine("Mercenary", AvgMRate)
-				DataDisplay:AddLine("Phantom", AvgPRate)
-				DataDisplay:AddLine("Glitch", AvgGRate)
-				DataDisplay:AddLine("Jester", AvgJRate)
-				DataDisplay:AddLine("Swapper", AvgSRate)
-				DataDisplay:AddLine("Killer", AvgKRate)
 			end
 
 		elseif str == "Best at role..." then
