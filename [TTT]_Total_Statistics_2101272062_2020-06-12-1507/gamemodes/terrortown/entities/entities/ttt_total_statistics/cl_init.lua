@@ -33,7 +33,7 @@ local PlayerStats = nil
 local CustomRolesEnabled = false
 
 --v crude way of finding out if custom roles have been mounted
-if ROLE_KILLER == 12 then
+if ROLE_NONE == -1 then
 	CustomRolesEnabled = true
 end
 
