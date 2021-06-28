@@ -178,7 +178,7 @@ local function DisplayWindow()
 				for id, record in pairs(PlayerStats) do
 					if(id==LocalPlayer():SteamID()) then
 						if(id==LocalPlayer():SteamID()) then
-							for r = 0, ROLE_MAX do
+							for r = 3, ROLE_MAX do
 								rolestring = ROLE_STRINGS[r]
 								rolestring_cap = rolestring:sub(1, 1):upper() .. rolestring:sub(2)
 								DataDisplay:AddLine(rolestring_caps, record[rolestring..'Rounds'].."/"..record.TotalRoundsPlayed)
@@ -276,7 +276,7 @@ local function DisplayWindow()
 			if(CustomRolesEnabled) then
 				local AvgRate = {}
 				local sRolestring = ""
-				for r = 0, ROLE_MAX do
+				for r = 3, ROLE_MAX do
 					sRolestring = ROLE_STRINGS_SHORT[r]
 					rolestring = ROLE_STRINGS[r]
 					rolestring_cap = rolestring:sub(1, 1):upper() .. rolestring:sub(2)
