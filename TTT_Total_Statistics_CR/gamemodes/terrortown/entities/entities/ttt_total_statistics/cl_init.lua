@@ -148,9 +148,9 @@ local function DisplayWindow()
 			DescriptionLabel:SetText("Average role win rate (%).")
 			for id, record in pairs(PlayerStats) do
 				if(id==LocalPlayer():SteamID()) then
-					DataDisplay:AddLine("Detective", math.Round(record.DetectiveWins/record.DetectiveRounds*100), 1)
-					DataDisplay:AddLine("Innocent", math.Round(record.InnocentWins/record.InnocentRounds*100), 1)
-					DataDisplay:AddLine("Traitor", math.Round(record.TraitorWins/record.TraitorRounds*100), 1)
+					DataDisplay:AddLine("Detective", math.Round(record.detectiveWins/record.detectiveRounds*100), 1)
+					DataDisplay:AddLine("Innocent", math.Round(record.innocentWins/record.innocentRounds*100), 1)
+					DataDisplay:AddLine("Traitor", math.Round(record.traitorWins/record.traitorRounds*100), 1)
 				end
 			end
 			if(CustomRolesEnabled) then
@@ -169,9 +169,9 @@ local function DisplayWindow()
 		DescriptionLabel:SetText("Rounds playing each role (times role played/total rounds played).")
 			for id, record in pairs(PlayerStats) do
 				if(id==LocalPlayer():SteamID()) then
-					DataDisplay:AddLine("Detective", record.DetectiveRounds.."/"..record.TotalRoundsPlayed)
-					DataDisplay:AddLine("Innocent", record.InnocentRounds.."/"..record.TotalRoundsPlayed)
-					DataDisplay:AddLine("Traitor", record.TraitorRounds.."/"..record.TotalRoundsPlayed)
+					DataDisplay:AddLine("Detective", record.detectiveRounds.."/"..record.TotalRoundsPlayed)
+					DataDisplay:AddLine("Innocent", record.innocentRounds.."/"..record.TotalRoundsPlayed)
+					DataDisplay:AddLine("Traitor", record.traitorRounds.."/"..record.TotalRoundsPlayed)
 				end
 			end
 			if(CustomRolesEnabled) then
@@ -262,9 +262,9 @@ local function DisplayWindow()
 			local AvgIRate = 0
 			local AvgTRate = 0
 			for id, record in pairs(PlayerStats) do
-				AvgDRate = AvgDRate + (record.DetectiveWins/record.DetectiveRounds*100)
-				AvgIRate = AvgIRate + (record.InnocentWins/record.InnocentRounds*100)
-				AvgTRate = AvgTRate + (record.TraitorWins/record.TraitorRounds*100)
+				AvgDRate = AvgDRate + (record.detectiveWins/record.detectiveRounds*100)
+				AvgIRate = AvgIRate + (record.innocentWins/record.innocentRounds*100)
+				AvgTRate = AvgTRate + (record.traitorWins/record.traitorRounds*100)
 			end
 			AvgDRate = math.Round(AvgDRate / table.Count(PlayerStats), 1)
 			AvgIRate = math.Round(AvgIRate / table.Count(PlayerStats), 1)
@@ -312,7 +312,7 @@ local function DisplayWindow()
 		elseif str == "Most crooked cop" then
 			DescriptionLabel:SetText("Average number of innocents killed per round as detective.")
 			for id, record in pairs(PlayerStats) do
-				DataDisplay:AddLine(record.Nickname, math.Round(record.CrookedCop/record.DetectiveRounds, 2))
+				DataDisplay:AddLine(record.Nickname, math.Round(record.CrookedCop/record.detectiveRounds, 2))
 				DataDisplay:SortByColumn(2, true)
 			end
 			
@@ -320,7 +320,7 @@ local function DisplayWindow()
 			DescriptionLabel:SetText("Average number of innocent players killed while on the innocent team.")
 			for id, record in pairs(PlayerStats) do
 				DataDisplay:AddLine(record.Nickname, math.Round(record.TriggerHappyInnocent/
-				(record.InnocentRounds + record.MercenaryRounds + record.GlitchRounds + record.PhantomRounds), 2))
+				(record.innocentRounds + record.MercenaryRounds + record.GlitchRounds + record.PhantomRounds), 2))
 				DataDisplay:SortByColumn(2, true)
 			end
 		
