@@ -33,7 +33,7 @@ local PlayerStats = nil
 local CustomRolesEnabled = false
 
 --v crude way of finding out if custom roles have been mounted
-if ROLE_NONE == -1 then
+if ROLE_MAX ~= nil then
 	CustomRolesEnabled = true
 end
 
