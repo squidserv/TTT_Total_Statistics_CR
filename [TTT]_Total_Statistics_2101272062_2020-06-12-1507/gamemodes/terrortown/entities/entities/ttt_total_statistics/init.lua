@@ -42,15 +42,22 @@ local function LoadPlayerStats()
 end
 
 local function AddNewPlayer(ID, nick)
-	PlayerStats[ID] = {DetectiveRounds = 0, DetectiveWins = 0, InnocentRounds = 0, 
-		InnocentWins = 0, Nickname = nick, TotalRoundsPlayed = 0, TraitorRounds = 0, TraitorWins = 0, 
-		AssassinRounds = 0, AssassinWins = 0, HypnotistRounds = 0, HypnotistWins = 0, VampireRounds = 0, 
-		VampireWins = 0, ZombieRounds = 0, ZombieWins = 0, MercenaryRounds = 0 , MercenaryWins = 0,
-		PhantomRounds = 0, PhantomWins = 0, GlitchRounds = 0, GlitchWins = 0, JesterRounds = 0,
-		JesterWins = 0, SwapperRounds = 0, SwapperWins = 0, KillerRounds = 0, KillerWins = 0, CrookedCop = 0,
-		TriggerHappyInnocent = 0, TotalFallDamage = 0, KilledFirst = 0, TraitorPartners = {},
-		DetectiveEquipment = {}, TraitorEquipment = {}}
-		--don't forget to update LoadPlayerStats()
+	PlayerStats[ID] = {}
+	for r = 0, ROLE_MAX do
+		local rolestring = ROLE_STRINGS[r]
+		PlayerStats[ID][rolestring..'Rounds'] = 0
+		PlayerStats[ID][rolestring..'Wins'] = 0
+	end
+
+	local stats = {'CrookedCop', 'TriggerHappyInnocent', 'TotalFallDamage', 'KilledFirst'}
+	for _, s in ipairs(stats) do
+		list[s] = 0
+	end
+
+	local statArray = {'TraitorPartners', 'DetectiveEquipment', 'TraitorEquipment'}
+	for _, a in ipairs(statArray) do
+		list[a] = {}
+	end
 end
 
 local function SavePlayerStats()
@@ -108,7 +115,7 @@ hook.Add("TTTBeginRound", "TotalStatistics_StartOfRoundLogic", function()
 	
 		StartingRoles[ply:SteamID()] = ply:GetRole()
 	
-		if(ply:GetRole()==ROLE_TRAITOR or ply:GetRole()==ROLE_ASSASSIN or ply:GetRole()==ROLE_HYPNOTIST or ply:GetRole()==ROLE_VAMPIRE) then
+		if ply:IsTraitorTeam() then
 			table.insert(StartingTraitors, ply)
 		end
 	end
@@ -129,13 +136,13 @@ end)
 hook.Add("DoPlayerDeath", "TotalStatistics_MurderCapture", function(victim, attacker)
 	--crooked cop capture
 	if((attacker:IsPlayer() and attacker:GetRole()== ROLE_DETECTIVE) and
-	(victim:IsPlayer() and (victim:GetRole()==ROLE_INNOCENT or victim:GetRole()==ROLE_DETECTIVE or attacker:GetRole()==ROLE_PHANTOM or victim:GetRole()==ROLE_GLITCH or victim:GetRole()==ROLE_MERCENARY or victim:GetRole()==ROLE_JESTER or victim:GetRole()==ROLE_SWAPPER))) then
+	(victim:IsPlayer() and (victim:IsInnocentTeam() or victim:IsJesterTeam()))) then
 		PlayerStats[attacker:SteamID()].CrookedCop = PlayerStats[attacker:SteamID()].CrookedCop + 1
 	end
 	
 	--trigger-happy innocent capture
-	if((attacker:IsPlayer() and (attacker:GetRole()==ROLE_INNOCENT or attacker:GetRole()==ROLE_GLITCH or attacker:GetRole()==ROLE_MERCENARY or attacker:GetRole()==ROLE_PHANTOM)) and
-	(victim:IsPlayer() and (victim:GetRole()==ROLE_INNOCENT or victim:GetRole()==ROLE_DETECTIVE  or attacker:GetRole()==ROLE_PHANTOM or victim:GetRole()==ROLE_GLITCH or victim:GetRole()==ROLE_MERCENARY or victim:GetRole()==ROLE_JESTER or victim:GetRole()==ROLE_SWAPPER))) then
+	if((attacker:IsPlayer() and attacker:IsInnocentTeam()) and
+	(victim:IsPlayer() and (victim:IsInnocentTeam() or victim:IsJesterTeam()))) then
 		PlayerStats[attacker:SteamID()].TriggerHappyInnocent = PlayerStats[attacker:SteamID()].TriggerHappyInnocent + 1
 	end
 	
@@ -154,150 +161,104 @@ end)
 hook.Add("TTTEndRound", "TotalStatistics_EndOfRoundLogic", function(result)
 	
 	for k, v in pairs(CurrentPlayers) do
-		
+
 		if(v:IsValid()) then
-		
-		PreviousRoundDebug = PreviousRoundDebug .. v:Nick() .. " was "
-		
-		--role plays and wins capture
-		PlayerStats[v:SteamID()].TotalRoundsPlayed = PlayerStats[v:SteamID()].TotalRoundsPlayed + 1
-		PlayerRole = v:GetRole()
-			
-		if(StartingRoles[v:SteamID()]==ROLE_DETECTIVE) then
-			PreviousRoundDebug = PreviousRoundDebug .. "detective and "
-			PlayerStats[v:SteamID()].DetectiveRounds = PlayerStats[v:SteamID()].DetectiveRounds + 1
-			if(result == WIN_INNOCENT or result == WIN_TIMELIMIT) then
-				PlayerStats[v:SteamID()].DetectiveWins = PlayerStats[v:SteamID()].DetectiveWins + 1
-				PreviousRoundDebug = PreviousRoundDebug .. "won. "
-			else
-				PreviousRoundDebug = PreviousRoundDebug .. "lost. "
+
+			PreviousRoundDebug = PreviousRoundDebug .. v:Nick() .. " was "
+
+			--role plays and wins capture
+			PlayerStats[v:SteamID()].TotalRoundsPlayed = PlayerStats[v:SteamID()].TotalRoundsPlayed + 1
+			local rolestring
+			for r = 0, ROLE_MAX do
+				if StartingRoles[v:SteamID()] == r  then
+					rolestring = ROLE_STRINGS[r]
+					PlayerStats[v:SteamID()][rolestring..'Rounds'] = PlayerStats[v:SteamID()][rolestring..'Rounds'] + 1
+					PreviousRoundDebug = PreviousRoundDebug ..rolestring.." and "
+					if r == ROLE_SWAPPER then
+						if(SwapperKilled) then
+							PlayerStats[v:SteamID()][rolestring..'Wins'] = PlayerStats[v:SteamID()][rolestring..'Wins'] + 1
+							PreviousRoundDebug = PreviousRoundDebug .. "won. "
+						else
+							PreviousRoundDebug = PreviousRoundDebug .. "lost. "
+						end
+					elseif r == ROLE_BEGGAR then
+						if v:IsBeggar() then
+							PreviousRoundDebug = PreviousRoundDebug .. "lost. "
+						else
+							PlayerStats[v:SteamID()][rolestring..'Wins'] = PlayerStats[v:SteamID()][rolestring..'Wins'] + 1
+							PreviousRoundDebug = PreviousRoundDebug .. "won. "
+						end
+					elseif r == ROLE_BODYSNATCHER then
+						if v:IsBodysnatcher() then
+							PreviousRoundDebug = PreviousRoundDebug .. "lost. "
+						else
+							PlayerStats[v:SteamID()][rolestring..'Wins'] = PlayerStats[v:SteamID()][rolestring..'Wins'] + 1
+							PreviousRoundDebug = PreviousRoundDebug .. "won. "
+						end
+					elseif v:IsInnocentTeam() then
+						if result == WIN_INNOCENT or result == WIN_TIMELIMIT then
+							PlayerStats[v:SteamID()][rolestring..'Wins'] = PlayerStats[v:SteamID()][rolestring..'Wins'] + 1
+							PreviousRoundDebug = PreviousRoundDebug .. "won. "
+						else
+							PreviousRoundDebug = PreviousRoundDebug .. "lost. "
+						end
+					elseif v:IsTraitorTeam() then
+						if result == WIN_TRAITOR then
+							PlayerStats[v:SteamID()][rolestring..'Wins'] = PlayerStats[v:SteamID()][rolestring..'Wins'] + 1
+							PreviousRoundDebug = PreviousRoundDebug .. "won. "
+						else
+							PreviousRoundDebug = PreviousRoundDebug .. "lost. "
+						end
+					elseif v:IsJester() then
+						if result == WIN_JESTER then
+							PlayerStats[v:SteamID()][rolestring..'Wins'] = PlayerStats[v:SteamID()][rolestring..'Wins'] + 1
+							PreviousRoundDebug = PreviousRoundDebug .. "won. "
+						else
+							PreviousRoundDebug = PreviousRoundDebug .. "lost. "
+						end
+					elseif v:IsClown() then
+						if result == WIN_CLOWN then
+							PlayerStats[v:SteamID()][rolestring..'Wins'] = PlayerStats[v:SteamID()][rolestring..'Wins'] + 1
+							PreviousRoundDebug = PreviousRoundDebug .. "won. "
+						else
+							PreviousRoundDebug = PreviousRoundDebug .. "lost. "
+						end
+					elseif v:IsOldMan() then
+						if result == WIN_OLDMAN then
+							PlayerStats[v:SteamID()][rolestring..'Wins'] = PlayerStats[v:SteamID()][rolestring..'Wins'] + 1
+							PreviousRoundDebug = PreviousRoundDebug .. "won. "
+						else
+							PreviousRoundDebug = PreviousRoundDebug .. "lost. "
+						end
+					elseif v:IsKiller() then
+						if result == WIN_KILLER then
+							PlayerStats[v:SteamID()][rolestring..'Wins'] = PlayerStats[v:SteamID()][rolestring..'Wins'] + 1
+							PreviousRoundDebug = PreviousRoundDebug .. "won. "
+						else
+							PreviousRoundDebug = PreviousRoundDebug .. "lost. "
+						end
+					elseif v:IsZombie() and not v:IsTraitorTeam() and not v:IsMonsterTeam() then
+						if result == WIN_ZOMBIE then
+							PlayerStats[v:SteamID()][rolestring..'Wins'] = PlayerStats[v:SteamID()][rolestring..'Wins'] + 1
+							PreviousRoundDebug = PreviousRoundDebug .. "won. "
+						else
+							PreviousRoundDebug = PreviousRoundDebug .. "lost. "
+						end
+					elseif v:IsMonsterTeam() then
+						if result == WIN_OLDMAN then
+							PlayerStats[v:SteamID()][rolestring..'Wins'] = PlayerStats[v:SteamID()][rolestring..'Wins'] + 1
+							PreviousRoundDebug = PreviousRoundDebug .. "won. "
+						else
+							PreviousRoundDebug = PreviousRoundDebug .. "lost. "
+						end
+					end
+				else
+					PreviousRoundDebug = PreviousRoundDebug .. "unknown."
+					print("[TTT] Total Statistics: "..v:Nick().." has an unexpected role ("..v:GetRole()..")")
+				end
 			end
-		elseif(StartingRoles[v:SteamID()]==ROLE_INNOCENT) then
-			PreviousRoundDebug = PreviousRoundDebug .. "innocent and "
-			PlayerStats[v:SteamID()].InnocentRounds = PlayerStats[v:SteamID()].InnocentRounds + 1
-			if(result == WIN_INNOCENT or result == WIN_TIMELIMIT) then
-				PlayerStats[v:SteamID()].InnocentWins = PlayerStats[v:SteamID()].InnocentWins + 1
-				PreviousRoundDebug = PreviousRoundDebug .. "won. "
-			else
-				PreviousRoundDebug = PreviousRoundDebug .. "lost. "
-			end
-		
-		elseif(StartingRoles[v:SteamID()]==ROLE_TRAITOR) then
-			PreviousRoundDebug = PreviousRoundDebug .. "traitor and "
-			PlayerStats[v:SteamID()].TraitorRounds = PlayerStats[v:SteamID()].TraitorRounds + 1
-			if(result == WIN_TRAITOR) then
-				PlayerStats[v:SteamID()].TraitorWins = PlayerStats[v:SteamID()].TraitorWins + 1
-				PreviousRoundDebug = PreviousRoundDebug .. "won. "
-			else
-				PreviousRoundDebug = PreviousRoundDebug .. "lost. "
-			end
-			
-		elseif(StartingRoles[v:SteamID()]==ROLE_MERCENARY) then
-			PreviousRoundDebug = PreviousRoundDebug .. "mercenary and "
-			PlayerStats[v:SteamID()].MercenaryRounds = PlayerStats[v:SteamID()].MercenaryRounds + 1
-			if(result == WIN_INNOCENT or result == WIN_TIMELIMIT) then
-				PlayerStats[v:SteamID()].MercenaryWins = PlayerStats[v:SteamID()].MercenaryWins + 1
-				PreviousRoundDebug = PreviousRoundDebug .. "won. "
-			else
-				PreviousRoundDebug = PreviousRoundDebug .. "lost. "
-			end
-		
-		elseif(StartingRoles[v:SteamID()]==ROLE_JESTER) then
-		PreviousRoundDebug = PreviousRoundDebug .. "jester and "
-			PlayerStats[v:SteamID()].JesterRounds = PlayerStats[v:SteamID()].JesterRounds + 1
-			if(result == WIN_JESTER) then
-				PlayerStats[v:SteamID()].JesterWins = PlayerStats[v:SteamID()].JesterWins + 1
-				PreviousRoundDebug = PreviousRoundDebug .. "won. "
-			else
-				PreviousRoundDebug = PreviousRoundDebug .. "lost. "
-			end
-			
-		elseif(StartingRoles[v:SteamID()]==ROLE_SWAPPER) then
-			PreviousRoundDebug = PreviousRoundDebug .. "swapper and "
-			PlayerStats[v:SteamID()].SwapperRounds = PlayerStats[v:SteamID()].SwapperRounds + 1
-			if(SwapperKilled) then
-				PlayerStats[v:SteamID()].SwapperWins = PlayerStats[v:SteamID()].SwapperWins + 1
-				PreviousRoundDebug = PreviousRoundDebug .. "won. "
-			else
-				PreviousRoundDebug = PreviousRoundDebug .. "lost. "
-			end
-		
-		elseif(StartingRoles[v:SteamID()]==ROLE_PHANTOM) then
-			PreviousRoundDebug = PreviousRoundDebug .. "phantom and "
-			PlayerStats[v:SteamID()].PhantomRounds = PlayerStats[v:SteamID()].PhantomRounds + 1
-			if(result == WIN_INNOCENT or result == WIN_TIMELIMIT) then
-				PlayerStats[v:SteamID()].PhantomWins = PlayerStats[v:SteamID()].PhantomWins + 1
-				PreviousRoundDebug = PreviousRoundDebug .. "won. "
-			else
-				PreviousRoundDebug = PreviousRoundDebug .. "lost. "
-			end
-		
-		elseif(StartingRoles[v:SteamID()]==ROLE_HYPNOTIST) then
-			PreviousRoundDebug = PreviousRoundDebug .. "hypnotist and "
-			PlayerStats[v:SteamID()].HypnotistRounds = PlayerStats[v:SteamID()].HypnotistRounds + 1
-			if(result == WIN_TRAITOR) then
-				PlayerStats[v:SteamID()].HypnotistWins = PlayerStats[v:SteamID()].HypnotistWins + 1
-				PreviousRoundDebug = PreviousRoundDebug .. "won. "
-			else
-				PreviousRoundDebug = PreviousRoundDebug .. "lost. "
-			end
-		
-		elseif(StartingRoles[v:SteamID()]==ROLE_GLITCH) then
-			PreviousRoundDebug = PreviousRoundDebug .. "glitch and "
-			PlayerStats[v:SteamID()].GlitchRounds = PlayerStats[v:SteamID()].GlitchRounds + 1
-			if(result == WIN_INNOCENT or result == WIN_TIMELIMIT) then
-				PlayerStats[v:SteamID()].GlitchWins = PlayerStats[v:SteamID()].GlitchWins + 1
-				PreviousRoundDebug = PreviousRoundDebug .. "won. "
-			else
-				PreviousRoundDebug = PreviousRoundDebug .. "lost. "
-			end
-		
-		elseif(StartingRoles[v:SteamID()]==ROLE_ZOMBIE) then
-			PreviousRoundDebug = PreviousRoundDebug .. "zombie and "
-			PlayerStats[v:SteamID()].ZombieRounds = PlayerStats[v:SteamID()].ZombieRounds + 1
-			if(result == WIN_TRAITOR) then
-				PlayerStats[v:SteamID()].ZombieWins = PlayerStats[v:SteamID()].ZombieWins + 1
-				PreviousRoundDebug = PreviousRoundDebug .. "won. "
-			else
-				PreviousRoundDebug = PreviousRoundDebug .. "lost. "
-			end	
-		
-		elseif(StartingRoles[v:SteamID()]==ROLE_VAMPIRE) then
-			PreviousRoundDebug = PreviousRoundDebug .. "vampire and "
-			PlayerStats[v:SteamID()].VampireRounds = PlayerStats[v:SteamID()].VampireRounds + 1
-			if(result == WIN_TRAITOR) then
-				PlayerStats[v:SteamID()].VampireWins = PlayerStats[v:SteamID()].VampireWins + 1
-				PreviousRoundDebug = PreviousRoundDebug .. "won. "
-			else
-				PreviousRoundDebug = PreviousRoundDebug .. "lost. "
-			end
-		
-		elseif(StartingRoles[v:SteamID()]==ROLE_ASSASSIN) then
-			PreviousRoundDebug = PreviousRoundDebug .. "assassin and "
-			PlayerStats[v:SteamID()].AssassinRounds = PlayerStats[v:SteamID()].AssassinRounds + 1
-			if(result == WIN_TRAITOR) then
-				PlayerStats[v:SteamID()].AssassinWins = PlayerStats[v:SteamID()].AssassinWins + 1
-				PreviousRoundDebug = PreviousRoundDebug .. "won. "
-			else
-				PreviousRoundDebug = PreviousRoundDebug .. "lost. "
-			end
-		
-		elseif(StartingRoles[v:SteamID()]==ROLE_KILLER) then
-			PreviousRoundDebug = PreviousRoundDebug .. "killer and "
-			PlayerStats[v:SteamID()].KillerRounds = PlayerStats[v:SteamID()].KillerRounds + 1
-			if(result == WIN_KILLER) then
-				PlayerStats[v:SteamID()].KillerWins = PlayerStats[v:SteamID()].KillerWins + 1
-				PreviousRoundDebug = PreviousRoundDebug .. "won. "
-			else
-				PreviousRoundDebug = PreviousRoundDebug .. "lost. "
-			end
-		
-		else
-			PreviousRoundDebug = PreviousRoundDebug .. "unknown."
-			print("[TTT] Total Statistics: "..ply:Nick().." has an unexpected role ("..PlayerRole..")")
-		end
-		
-		PreviousRoundDebug = PreviousRoundDebug .. "\n"
+
+			PreviousRoundDebug = PreviousRoundDebug .. "\n"
 		end
 	end
 	
@@ -390,7 +351,7 @@ net.Receive("TotalStatistics_SendClientEquipmentName", function(len, ply)
 		end
 		PlayerStats[ply:SteamID()]["DetectiveEquipment"][name] = PlayerStats[ply:SteamID()]["DetectiveEquipment"][name] + 1
 	
-	elseif ply:GetRole()==ROLE_TRAITOR then
+	elseif ply:IsTraitorTeam() then
 		if(PlayerStats[ply:SteamID()]["TraitorEquipment"][name] == nil) then --if hasn't been paired before
 			PlayerStats[ply:SteamID()]["TraitorEquipment"][name] = 0
 		end
