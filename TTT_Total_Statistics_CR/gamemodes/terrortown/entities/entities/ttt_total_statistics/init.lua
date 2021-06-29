@@ -50,14 +50,14 @@ local function AddNewPlayer(ID, nick)
 		PlayerStats[ID][rolestring..'Wins'] = 0
 	end
 
-	local stats = {'CrookedCop', 'TriggerHappyInnocent', 'TotalFallDamage', 'KilledFirst'}
+	local stats = {'CrookedCop', 'TriggerHappyInnocent', 'TotalFallDamage', 'KilledFirst', 'TotalRoundsPlayed'}
 	for _, s in ipairs(stats) do
-		list[s] = 0
+		PlayerStats[ID][s] = 0
 	end
 
 	local statArray = {'TraitorPartners', 'DetectiveEquipment', 'TraitorEquipment'}
 	for _, a in ipairs(statArray) do
-		list[a] = {}
+		PlayerStats[ID][a] = {}
 	end
 end
 
@@ -170,8 +170,10 @@ hook.Add("TTTEndRound", "TotalStatistics_EndOfRoundLogic", function(result)
 			--role plays and wins capture
 			PlayerStats[v:SteamID()].TotalRoundsPlayed = PlayerStats[v:SteamID()].TotalRoundsPlayed + 1
 			local rolestring = ""
+			local FoundRole = false
 			for r = 0, ROLE_MAX do
 				if StartingRoles[v:SteamID()] == r  then
+					FoundRole = true
 					rolestring = ROLE_STRINGS[r]
 					PlayerStats[v:SteamID()][rolestring..'Rounds'] = PlayerStats[v:SteamID()][rolestring..'Rounds'] + 1
 					PreviousRoundDebug = PreviousRoundDebug ..rolestring.." and "
@@ -246,17 +248,20 @@ hook.Add("TTTEndRound", "TotalStatistics_EndOfRoundLogic", function(result)
 							PreviousRoundDebug = PreviousRoundDebug .. "lost. "
 						end
 					elseif v:IsMonsterTeam() then
-						if result == WIN_OLDMAN then
+						if result == WIN_MONSTER then
 							PlayerStats[v:SteamID()][rolestring..'Wins'] = PlayerStats[v:SteamID()][rolestring..'Wins'] + 1
 							PreviousRoundDebug = PreviousRoundDebug .. "won. "
 						else
 							PreviousRoundDebug = PreviousRoundDebug .. "lost. "
 						end
 					end
-				else
-					PreviousRoundDebug = PreviousRoundDebug .. "unknown."
-					print("[TTT] Total Statistics: "..v:Nick().." has an unexpected role ("..v:GetRole()..")")
+					break
 				end
+			end
+
+			if not FoundRole then
+				PreviousRoundDebug = PreviousRoundDebug .. "unknown."
+				print("[TTT] Total Statistics: "..v:Nick().." has an unexpected role ("..v:GetRole()..")")
 			end
 
 			PreviousRoundDebug = PreviousRoundDebug .. "\n"
