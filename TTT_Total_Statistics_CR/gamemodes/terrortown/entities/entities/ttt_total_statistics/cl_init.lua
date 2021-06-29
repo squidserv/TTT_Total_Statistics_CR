@@ -181,7 +181,7 @@ local function DisplayWindow()
 							for r = 3, ROLE_MAX do
 								rolestring = ROLE_STRINGS[r]
 								rolestring_cap = rolestring:sub(1, 1):upper() .. rolestring:sub(2)
-								DataDisplay:AddLine(rolestring_caps, record[rolestring..'Rounds'].."/"..record.TotalRoundsPlayed)
+								DataDisplay:AddLine(rolestring_cap, record[rolestring..'Rounds'].."/"..record.TotalRoundsPlayed)
 							end
 						end
 					end
