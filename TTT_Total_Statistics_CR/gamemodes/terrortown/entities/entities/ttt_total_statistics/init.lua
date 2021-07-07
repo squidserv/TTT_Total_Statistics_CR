@@ -15,6 +15,15 @@ local PreviousRoundDebug = ""
 util.AddNetworkString("TotalStatistics_AskClientEquipmentName")
 util.AddNetworkString("TotalStatistics_SendClientEquipmentName")
 
+if not CR_VERSION then
+	ROLE_STRINGS = {
+		[ROLE_INNOCENT] = "innocent",
+		[ROLE_TRAITOR] = "traitor",
+		[ROLE_DETECTIVE] = "detective"
+	}
+	ROLE_MAX = 2
+end
+
 local function LoadPlayerStats()
 	if not file.Exists("ttt", "DATA") then file.CreateDir("ttt_total_statistics") end
 	if not file.Exists("ttt/ttt_total_statistics", "DATA") then file.CreateDir("ttt/ttt_total_statistics") end
@@ -44,14 +53,6 @@ end
 local function AddNewPlayer(ID, nick)
 	PlayerStats[ID] = {}
 	local rolestring = ""
-	if not CR_VERSION then
-		ROLE_STRINGS = {
-			[ROLE_INNOCENT] = "innocent",
-			[ROLE_TRAITOR] = "traitor",
-			[ROLE_DETECTIVE] = "detective"
-		}
-		ROLE_MAX = 2
-	end
 	for r = 0, ROLE_MAX do
 		rolestring = ROLE_STRINGS[r]
 		PlayerStats[ID][rolestring..'Rounds'] = 0
