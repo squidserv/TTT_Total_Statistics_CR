@@ -50,13 +50,12 @@ local function AddNewPlayer(ID, nick)
 			[ROLE_TRAITOR] = "traitor",
 			[ROLE_DETECTIVE] = "detective"
 		}
-	else
-		for r = 0, ROLE_MAX do
-			rolestring = ROLE_STRINGS[r]
-			PlayerStats[ID][rolestring..'Rounds'] = 0
-			PlayerStats[ID][rolestring..'Wins'] = 0
-		end
-
+		ROLE_MAX = 2
+	end
+	for r = 0, ROLE_MAX do
+		rolestring = ROLE_STRINGS[r]
+		PlayerStats[ID][rolestring..'Rounds'] = 0
+		PlayerStats[ID][rolestring..'Wins'] = 0
 	end
 
 	local stats = {'CrookedCop', 'TriggerHappyInnocent', 'TotalFallDamage', 'KilledFirst', 'TotalRoundsPlayed'}
