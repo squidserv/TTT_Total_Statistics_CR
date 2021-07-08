@@ -52,6 +52,9 @@ end
 
 local function AddNewPlayer(ID, nick)
 	PlayerStats[ID] = {}
+
+	PlayerStats[ID]['Nickname'] = nick
+
 	local rolestring = ""
 	for r = 0, ROLE_MAX do
 		rolestring = ROLE_STRINGS[r]
