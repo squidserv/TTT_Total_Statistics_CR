@@ -80,7 +80,7 @@ local function ResetAllPlayerStats()
 	LoadPlayerStats()
 end
 
-concommand.Add("ww", function(ply, cmd, args, str)
+concommand.Add("ttt_totalstatistics_reset", function(ply, cmd, args, str)
 	file.Delete("ttt/ttt_total_statistics/stats.txt")
 	table.Empty(PlayerStats)
 	LoadPlayerStats()
