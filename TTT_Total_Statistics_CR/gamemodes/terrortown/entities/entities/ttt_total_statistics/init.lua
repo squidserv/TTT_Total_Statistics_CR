@@ -164,8 +164,9 @@ hook.Add("DoPlayerDeath", "TotalStatistics_MurderCapture", function(victim, atta
 	end
 	
 	--trigger-happy innocent capture
-	if((attacker:IsPlayer() and attacker:IsInnocentTeam() and not attacker:IsBot()) and
-	(victim:IsPlayer() and (victim:IsInnocentTeam() or victim:IsJesterTeam()))) then
+	if((attacker:IsPlayer() and (attacker:GetRole() == ROLE_INNOCENT
+			or (CR_VERSION and attacker:IsInnocentTeam())) and not attacker:IsBot()) and (victim:IsPlayer()
+			and (victim:GetRole() == ROLE_INNOCENT or (CR_VERSION and (victim:IsInnocentTeam() or victim:IsJesterTeam()))))) then
 		PlayerStats[attacker:SteamID()].TriggerHappyInnocent = PlayerStats[attacker:SteamID()].TriggerHappyInnocent + 1
 	end
 	
