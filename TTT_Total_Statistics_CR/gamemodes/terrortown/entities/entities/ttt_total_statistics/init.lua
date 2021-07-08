@@ -35,6 +35,13 @@ local function LoadPlayerStats()
 	--check if format is up to date and update it if not
 	local updated = false
 	for steamID, record in pairs(PlayerStats) do
+		if not PlayerStats[steamID]['Nickname'] then
+			for _ , ply in ipairs(player.GetAll()) do
+				if ply:SteamID() == steamID then
+					PlayerStats[steamID]['Nickname'] = ply:Nick()
+				end
+			end
+		end
 		if PlayerStats[steamID]["DetectiveEquipment"] == nil then
 			updated = true
 			PlayerStats[steamID]["DetectiveEquipment"] = {}
