@@ -124,7 +124,7 @@ hook.Add("TTTBeginRound", "TotalStatistics_StartOfRoundLogic", function()
 	--find traitors and their partners
 	--also stuck swapper spawn and starting zombie team capture on the end
 	for k, ply in pairs(CurrentPlayers) do
-		if not v:IsBot() then
+		if not ply:IsBot() then
 			StartingRoles[ply:SteamID()] = ply:GetRole()
 
 			if ply:GetRole()==ROLE_TRAITOR or (ply.IsTraitorTeam and ply:IsTraitorTeam()) then
