@@ -85,7 +85,9 @@ concommand.Add("ttt_totalstatistics_reset", function(ply, cmd, args, str)
 	table.Empty(PlayerStats)
 	LoadPlayerStats()
 	for k, v in pairs(player.GetAll()) do
-		AddNewPlayer(v:SteamID(), v:Nick())
+		if v:steamID64() ~= 90071996842377216 then
+			AddNewPlayer(v:SteamID(), v:Nick())
+		end
 	end
 	SavePlayerStats()
 end)
@@ -122,11 +124,12 @@ hook.Add("TTTBeginRound", "TotalStatistics_StartOfRoundLogic", function()
 	--find traitors and their partners
 	--also stuck swapper spawn and starting zombie team capture on the end
 	for k, ply in pairs(CurrentPlayers) do
-	
-		StartingRoles[ply:SteamID()] = ply:GetRole()
-	
-		if ply:IsTraitorTeam() then
-			table.insert(StartingTraitors, ply)
+		if v:steamID64() ~= 90071996842377216 then
+			StartingRoles[ply:SteamID()] = ply:GetRole()
+
+			if ply:GetRole()==ROLE_TRAITOR or (ply.IsTraitorTeam and ply:IsTraitorTeam()) then
+				table.insert(StartingTraitors, ply)
+			end
 		end
 	end
 	
@@ -134,7 +137,7 @@ hook.Add("TTTBeginRound", "TotalStatistics_StartOfRoundLogic", function()
 end)
 
 hook.Add("EntityTakeDamage", "TotalStatistics_FallDamageCapture", function(ply, dmginfo)
-	if(ply:IsPlayer() and dmginfo:IsFallDamage()) then
+	if(ply:IsPlayer() and dmginfo:IsFallDamage() and not ply:IsBot()) then
 		if dmginfo:GetDamage() > 100 then --cap the damage or you get +5000 for falling through the world
 			PlayerStats[ply:SteamID()].TotalFallDamage = PlayerStats[ply:SteamID()].TotalFallDamage + 100 
 		else
@@ -145,13 +148,13 @@ end)
 
 hook.Add("DoPlayerDeath", "TotalStatistics_MurderCapture", function(victim, attacker)
 	--crooked cop capture
-	if((attacker:IsPlayer() and attacker:GetRole()== ROLE_DETECTIVE) and
+	if((attacker:IsPlayer() and attacker:GetRole()== ROLE_DETECTIVE and not attacker:IsBot()) and
 	(victim:IsPlayer() and (victim:IsInnocentTeam() or victim:IsJesterTeam()))) then
 		PlayerStats[attacker:SteamID()].CrookedCop = PlayerStats[attacker:SteamID()].CrookedCop + 1
 	end
 	
 	--trigger-happy innocent capture
-	if((attacker:IsPlayer() and attacker:IsInnocentTeam()) and
+	if((attacker:IsPlayer() and attacker:IsInnocentTeam() and not attacker:IsBot()) and
 	(victim:IsPlayer() and (victim:IsInnocentTeam() or victim:IsJesterTeam()))) then
 		PlayerStats[attacker:SteamID()].TriggerHappyInnocent = PlayerStats[attacker:SteamID()].TriggerHappyInnocent + 1
 	end
@@ -162,7 +165,7 @@ hook.Add("DoPlayerDeath", "TotalStatistics_MurderCapture", function(victim, atta
 	end
 	
 	--first killed capture
-	if victim:IsValid() and not FirstBeenKilled then
+	if victim:IsValid() and not victim:IsBot() and not FirstBeenKilled then
 		PlayerStats[victim:SteamID()].KilledFirst = PlayerStats[victim:SteamID()].KilledFirst + 1
 		FirstBeenKilled = true
 	end
@@ -172,7 +175,7 @@ hook.Add("TTTEndRound", "TotalStatistics_EndOfRoundLogic", function(result)
 	
 	for k, v in pairs(CurrentPlayers) do
 
-		if(v:IsValid()) then
+		if(v:IsValid() and not v:IsBot()) then
 
 			PreviousRoundDebug = PreviousRoundDebug .. v:Nick() .. " was "
 
@@ -359,18 +362,18 @@ net.Receive("TotalStatistics_SendClientEquipmentName", function(len, ply)
 	local error = net.ReadBool()
 	if error then
 		print("Failed to find equipment ("..name..") bought by "..ply:Nick().." for [TTT] Total Statistics!")
-		
+	elseif ply:IsBot() then
 	elseif ply:GetRole()==ROLE_DETECTIVE then
 		if(PlayerStats[ply:SteamID()]["DetectiveEquipment"][name] == nil) then --if hasn't been paired before
 			PlayerStats[ply:SteamID()]["DetectiveEquipment"][name] = 0
 		end
 		PlayerStats[ply:SteamID()]["DetectiveEquipment"][name] = PlayerStats[ply:SteamID()]["DetectiveEquipment"][name] + 1
-	
-	elseif ply:IsTraitorTeam() then
+
+	elseif ply:GetRole()==ROLE_TRAITOR or (ply.IsTraitorTeam and ply:IsTraitorTeam()) then
 		if(PlayerStats[ply:SteamID()]["TraitorEquipment"][name] == nil) then --if hasn't been paired before
 			PlayerStats[ply:SteamID()]["TraitorEquipment"][name] = 0
 		end
 		PlayerStats[ply:SteamID()]["TraitorEquipment"][name] = PlayerStats[ply:SteamID()]["TraitorEquipment"][name] + 1
-	
+
 	end
 end)
