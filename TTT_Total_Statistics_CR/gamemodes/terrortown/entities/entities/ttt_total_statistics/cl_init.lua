@@ -118,7 +118,7 @@ local function DisplayWindow()
 			rolestring_cap = rolestring:sub(1, 1):upper() .. rolestring:sub(2)
 			if str == rolestring_cap then
 				for id, record in pairs(PlayerStats) do
-					DataDisplay:AddLine(record.Nickname, math.Round(record[rolestring..'Wins']/record[rolestring..'Rounds']*100, 1))
+					DataDisplay:AddLine(record.Nickname, math.Round((record[rolestring..'Wins'] or 0)/(record[rolestring..'Rounds'] or 1)*100, 1))
 					DataDisplay:SortByColumn(2, true)
 				end
 			end
@@ -159,7 +159,7 @@ local function DisplayWindow()
 						for r = 0, ROLE_MAX do
 							rolestring = ROLE_STRINGS[r]
 							rolestring_cap = rolestring:sub(1, 1):upper() .. rolestring:sub(2)
-							DataDisplay:AddLine(rolestring_cap, math.Round(record[rolestring..'Wins']/record[rolestring..'Rounds']*100), 1)
+							DataDisplay:AddLine(rolestring_cap, math.Round((record[rolestring..'Wins'] or 0)/(record[rolestring..'Rounds'] or 1)*100), 1)
 						end
 					end
 				end
@@ -181,7 +181,7 @@ local function DisplayWindow()
 							for r = 3, ROLE_MAX do
 								rolestring = ROLE_STRINGS[r]
 								rolestring_cap = rolestring:sub(1, 1):upper() .. rolestring:sub(2)
-								DataDisplay:AddLine(rolestring_cap, record[rolestring..'Rounds'].."/"..record.TotalRoundsPlayed)
+								DataDisplay:AddLine(rolestring_cap, (record[rolestring..'Rounds'] or 0).."/"..record.TotalRoundsPlayed)
 							end
 						end
 					end
@@ -283,7 +283,7 @@ local function DisplayWindow()
 					AvgRate[sRolestring] = 0
 					for id, record in pairs(PlayerStats) do
 						AvgRate[sRolestring] = AvgRate[sRolestring] +
-								(record[rolestring..'Wins']/record[rolestring..'Rounds']*100)
+								((record[rolestring..'Wins'] or 0)/(record[rolestring..'Rounds'] or 1)*100)
 					end
 					AvgRate[sRolestring] = math.Round(AvgRate[sRolestring] / table.Count(PlayerStats), 1)
 					DataDisplay:AddLine(rolestring_cap, AvgRate[sRolestring])

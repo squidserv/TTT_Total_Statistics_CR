@@ -198,11 +198,11 @@ hook.Add("TTTEndRound", "TotalStatistics_EndOfRoundLogic", function(result)
 				if StartingRoles[v:SteamID()] == r  then
 					FoundRole = true
 					rolestring = ROLE_STRINGS[r]
-					PlayerStats[v:SteamID()][rolestring..'Rounds'] = PlayerStats[v:SteamID()][rolestring..'Rounds'] + 1
+					PlayerStats[v:SteamID()][rolestring..'Rounds'] = (PlayerStats[v:SteamID()][rolestring..'Rounds'] or 0) + 1
 					PreviousRoundDebug = PreviousRoundDebug ..rolestring.." and "
 					if r == ROLE_SWAPPER then
 						if(SwapperKilled) then
-							PlayerStats[v:SteamID()][rolestring..'Wins'] = PlayerStats[v:SteamID()][rolestring..'Wins'] + 1
+							PlayerStats[v:SteamID()][rolestring..'Wins'] = (PlayerStats[v:SteamID()][rolestring..'Wins'] or 0) + 1
 							PreviousRoundDebug = PreviousRoundDebug .. "won. "
 						else
 							PreviousRoundDebug = PreviousRoundDebug .. "lost. "
@@ -211,68 +211,68 @@ hook.Add("TTTEndRound", "TotalStatistics_EndOfRoundLogic", function(result)
 						if v:IsBeggar() then
 							PreviousRoundDebug = PreviousRoundDebug .. "lost. "
 						else
-							PlayerStats[v:SteamID()][rolestring..'Wins'] = PlayerStats[v:SteamID()][rolestring..'Wins'] + 1
+							PlayerStats[v:SteamID()][rolestring..'Wins'] = (PlayerStats[v:SteamID()][rolestring..'Wins'] or 0) + 1
 							PreviousRoundDebug = PreviousRoundDebug .. "won. "
 						end
 					elseif r == ROLE_BODYSNATCHER then
 						if v:IsBodysnatcher() then
 							PreviousRoundDebug = PreviousRoundDebug .. "lost. "
 						else
-							PlayerStats[v:SteamID()][rolestring..'Wins'] = PlayerStats[v:SteamID()][rolestring..'Wins'] + 1
+							PlayerStats[v:SteamID()][rolestring..'Wins'] = (PlayerStats[v:SteamID()][rolestring..'Wins'] or 0) + 1
 							PreviousRoundDebug = PreviousRoundDebug .. "won. "
 						end
 					elseif v:IsInnocentTeam() then
 						if result == WIN_INNOCENT or result == WIN_TIMELIMIT then
-							PlayerStats[v:SteamID()][rolestring..'Wins'] = PlayerStats[v:SteamID()][rolestring..'Wins'] + 1
+							PlayerStats[v:SteamID()][rolestring..'Wins'] = (PlayerStats[v:SteamID()][rolestring..'Wins'] or 0) + 1
 							PreviousRoundDebug = PreviousRoundDebug .. "won. "
 						else
 							PreviousRoundDebug = PreviousRoundDebug .. "lost. "
 						end
 					elseif v:IsTraitorTeam() then
 						if result == WIN_TRAITOR then
-							PlayerStats[v:SteamID()][rolestring..'Wins'] = PlayerStats[v:SteamID()][rolestring..'Wins'] + 1
+							PlayerStats[v:SteamID()][rolestring..'Wins'] = (PlayerStats[v:SteamID()][rolestring..'Wins'] or 0) + 1
 							PreviousRoundDebug = PreviousRoundDebug .. "won. "
 						else
 							PreviousRoundDebug = PreviousRoundDebug .. "lost. "
 						end
 					elseif v:IsJester() then
 						if result == WIN_JESTER then
-							PlayerStats[v:SteamID()][rolestring..'Wins'] = PlayerStats[v:SteamID()][rolestring..'Wins'] + 1
+							PlayerStats[v:SteamID()][rolestring..'Wins'] = (PlayerStats[v:SteamID()][rolestring..'Wins'] or 0) + 1
 							PreviousRoundDebug = PreviousRoundDebug .. "won. "
 						else
 							PreviousRoundDebug = PreviousRoundDebug .. "lost. "
 						end
 					elseif v:IsClown() then
 						if result == WIN_CLOWN then
-							PlayerStats[v:SteamID()][rolestring..'Wins'] = PlayerStats[v:SteamID()][rolestring..'Wins'] + 1
+							PlayerStats[v:SteamID()][rolestring..'Wins'] = (PlayerStats[v:SteamID()][rolestring..'Wins'] or 0) + 1
 							PreviousRoundDebug = PreviousRoundDebug .. "won. "
 						else
 							PreviousRoundDebug = PreviousRoundDebug .. "lost. "
 						end
 					elseif v:IsOldMan() then
 						if result == WIN_OLDMAN then
-							PlayerStats[v:SteamID()][rolestring..'Wins'] = PlayerStats[v:SteamID()][rolestring..'Wins'] + 1
+							PlayerStats[v:SteamID()][rolestring..'Wins'] = (PlayerStats[v:SteamID()][rolestring..'Wins'] or 0) + 1
 							PreviousRoundDebug = PreviousRoundDebug .. "won. "
 						else
 							PreviousRoundDebug = PreviousRoundDebug .. "lost. "
 						end
 					elseif v:IsKiller() then
 						if result == WIN_KILLER then
-							PlayerStats[v:SteamID()][rolestring..'Wins'] = PlayerStats[v:SteamID()][rolestring..'Wins'] + 1
+							PlayerStats[v:SteamID()][rolestring..'Wins'] = (PlayerStats[v:SteamID()][rolestring..'Wins'] or 0) + 1
 							PreviousRoundDebug = PreviousRoundDebug .. "won. "
 						else
 							PreviousRoundDebug = PreviousRoundDebug .. "lost. "
 						end
 					elseif v:IsZombie() and not v:IsTraitorTeam() and not v:IsMonsterTeam() then
 						if result == WIN_ZOMBIE then
-							PlayerStats[v:SteamID()][rolestring..'Wins'] = PlayerStats[v:SteamID()][rolestring..'Wins'] + 1
+							PlayerStats[v:SteamID()][rolestring..'Wins'] = (PlayerStats[v:SteamID()][rolestring..'Wins'] or 0) + 1
 							PreviousRoundDebug = PreviousRoundDebug .. "won. "
 						else
 							PreviousRoundDebug = PreviousRoundDebug .. "lost. "
 						end
 					elseif v:IsMonsterTeam() then
 						if result == WIN_MONSTER then
-							PlayerStats[v:SteamID()][rolestring..'Wins'] = PlayerStats[v:SteamID()][rolestring..'Wins'] + 1
+							PlayerStats[v:SteamID()][rolestring..'Wins'] = (PlayerStats[v:SteamID()][rolestring..'Wins'] or 0) + 1
 							PreviousRoundDebug = PreviousRoundDebug .. "won. "
 						else
 							PreviousRoundDebug = PreviousRoundDebug .. "lost. "
