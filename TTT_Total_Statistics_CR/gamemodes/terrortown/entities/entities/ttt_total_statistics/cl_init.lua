@@ -43,21 +43,21 @@ local function GetPlayerData()
 end
 
 net.Receive("TotalStatistics_PlayerStatsMessage", function()
-    local len = net.ReadUInt(16)
-    local compressedString = net.ReadData(len)
-    local playerStatsJson = util.Decompress(compressedString)
-    PlayerStats = util.JSONToTable(playerStatsJson)
+	local len = net.ReadUInt(16)
+	local compressedString = net.ReadData(len)
+	local playerStatsJson = util.Decompress(compressedString)
+	PlayerStats = util.JSONToTable(playerStatsJson)
 end)
 
 local function LowerFirst(str)
-    local first = str:sub(1, 1):lower()
-    local rest = str:sub(2)
-    return first .. rest
+	local first = str:sub(1, 1):lower()
+	local rest = str:sub(2)
+	return first .. rest
 end
 
 local function GetValue(record, name, default)
-    if not default then default = 0 end
-    return record[name] or record[LowerFirst(name)] or default
+	if not default then default = 0 end
+	return record[name] or record[LowerFirst(name)] or default
 end
 
 local function DisplayWindow()
@@ -205,8 +205,8 @@ local function DisplayWindow()
 		elseif str == "Best traitor partners" then
 			DescriptionLabel:SetText("Win rate when on a traitor team with each player (%).")
 
-            local record = PlayerStats[LocalPlayer():SteamID()]
-            local partners = GetValue(record, "TraitorPartners", nil)
+			local record = PlayerStats[LocalPlayer():SteamID()]
+			local partners = GetValue(record, "TraitorPartners", nil)
 			if (partners==nil) then
 				DataDisplay:AddLine("No partners yet", "No partners yet")
 			else
@@ -219,8 +219,8 @@ local function DisplayWindow()
 		elseif str == "Favourite detective equipment" then
 			DescriptionLabel:SetText("Times you've bought each detective item")
 
-            local record = PlayerStats[LocalPlayer():SteamID()]
-            local equip = GetValue(record, "DetectiveEquipment", nil)
+			local record = PlayerStats[LocalPlayer():SteamID()]
+			local equip = GetValue(record, "DetectiveEquipment", nil)
 			if (equip==nil) then
 				DataDisplay:AddLine("No equipment yet", "No equipment yet")
 			else
@@ -233,8 +233,8 @@ local function DisplayWindow()
 		elseif str == "Favourite traitor equipment" then
 			DescriptionLabel:SetText("Times you've bought each traitor item")
 
-            local record = PlayerStats[LocalPlayer():SteamID()]
-            local equip = GetValue(record, "TraitorEquipment", nil)
+			local record = PlayerStats[LocalPlayer():SteamID()]
+			local equip = GetValue(record, "TraitorEquipment", nil)
 			if (equip==nil) then
 				DataDisplay:AddLine("No equipment yet", "No equipment yet")
 			else
@@ -407,63 +407,37 @@ AccessButton.DoClick = function()
 	DisplayWindow()
 end
 
+local function GetItemName(item, role)
+	local id = tonumber(item)
+	local info = GetEquipmentItemById and GetEquipmentItemById(id) or GetEquipmentItem(role, id)
+	return info and LANG.TryTranslation(info.name) or item
+end
+
+function GetWeaponName(item)
+	for _, v in ipairs(weapons.GetList()) do
+		if item == WEPS.GetClass(v) then
+			return LANG.TryTranslation(v.PrintName)
+		end
+	end
+
+	return item
+end
+
 hook.Add("TTTBoughtItem", "TotalStatistics_PlayerBoughtItem", function(is_item, equipment)
-	local error = false
-	--when player buys an item, first check if its on the SWEP list
-	for k, v in pairs(weapons.GetList()) do
-		if equipment == v.ClassName then
-			net.Start("TotalStatistics_SendClientEquipmentName")
-            net.WriteString(v.PrintName)
-			net.WriteBool(error)
-            net.SendToServer()
-			return
-		elseif equipment == tostring(EQUIP_RADAR) then
-			net.Start("TotalStatistics_SendClientEquipmentName")
-            net.WriteString("Radar")
-			net.WriteBool(error)
-            net.SendToServer()
-			return
-		elseif equipment == tostring(EQUIP_ARMOR) then
-			net.Start("TotalStatistics_SendClientEquipmentName")
-            net.WriteString("Body Armor")
-			net.WriteBool(error)
-            net.SendToServer()
-			return
-		elseif equipment == tostring(EQUIP_DISGUISE) then
-			net.Start("TotalStatistics_SendClientEquipmentName")
-            net.WriteString("Disguise")
-            net.SendToServer()
-			return
-		end
+	local role = LocalPlayer():GetRole()
+	if is_item then
+		name = GetItemName(equipment, role)
+	else
+		name = GetWeaponName(equipment)
 	end
 
-	--if its not on the SWEP list, then check the equipment item menu for the role
-	if LocalPlayer():GetRole() == ROLE_DETECTIVE then
-		for k, v in pairs (EquipmentItems[ROLE_DETECTIVE]) do
-			if equipment == v.id then
-				net.Start("TotalStatistics_SendClientEquipmentName")
-				net.WriteString(v.name)
-				net.WriteBool(error)
-				net.SendToServer()
-				return
-			end
-		end
-	elseif LocalPlayer():GetRole() == ROLE_TRAITOR then
-		for k, v in pairs (EquipmentItems[ROLE_TRAITOR]) do
-			if equipment == v.id then
-				net.Start("TotalStatistics_SendClientEquipmentName")
-				net.WriteString(v.name)
-				net.WriteBool(error)
-				net.SendToServer()
-				return
-			end
-		end
-	end
-
-	--if we can't find it, let the server know
-	error = true
 	net.Start("TotalStatistics_SendClientEquipmentName")
-	net.WriteString(equipment)
-	net.WriteBool(error)
+	if name ~= equipment then
+		net.WriteString(name)
+		net.WriteBool(false)
+	else
+		net.WriteString(equipment)
+		net.WriteBool(true)
+	end
 	net.SendToServer()
 end)

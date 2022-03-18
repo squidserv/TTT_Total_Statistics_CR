@@ -313,72 +313,72 @@ end)
 util.AddNetworkString("TotalStatistics_PlayerStatsMessage")
 util.AddNetworkString("TotalStatistics_RequestPlayerStats")
 net.Receive("TotalStatistics_RequestPlayerStats", function(_, ply)
-    local playerStatsJson = util.TableToJSON(PlayerStats)
-    local compressedString = util.Compress(playerStatsJson)
-    local len = #compressedString
+	local playerStatsJson = util.TableToJSON(PlayerStats)
+	local compressedString = util.Compress(playerStatsJson)
+	local len = #compressedString
 
 	net.Start("TotalStatistics_PlayerStatsMessage")
-    net.WriteUInt(len, 16)
-    net.WriteData(compressedString, len)
+	net.WriteUInt(len, 16)
+	net.WriteData(compressedString, len)
 	net.Send(ply)
 end)
 
 local function RenameWeps(name)
-    if name == "sipistol_name" then
-        return "Silenced Pistol"
-    elseif name == "knife_name" then
-        return "Knife"
-    elseif name == "newton_name" then
-        return "Newton Launcher"
-    elseif name == "tele_name" then
-        return "Teleporter"
-    elseif name == "hstation_name" then
-        return "Health Station"
-    elseif name == "flare_name" then
-        return "Flare Gun"
-    elseif name == "decoy_name" then
-        return "Decoy"
-    elseif name == "radio_name" then
-        return "Radio"
-    elseif name == "polter_name" then
-        return "Poltergeist"
-    elseif name == "vis_name" then
-        return "Visualizer"
-    elseif name == "defuser_name" then
-        return "Defuser"
-    elseif name == "stungun_name" then
-        return "UMP Prototype"
-    elseif name == "binoc_name" then
-        return "Binoculars"
+	if name == "sipistol_name" then
+		return "Silenced Pistol"
+	elseif name == "knife_name" then
+		return "Knife"
+	elseif name == "newton_name" then
+		return "Newton Launcher"
+	elseif name == "tele_name" then
+		return "Teleporter"
+	elseif name == "hstation_name" then
+		return "Health Station"
+	elseif name == "flare_name" then
+		return "Flare Gun"
+	elseif name == "decoy_name" then
+		return "Decoy"
+	elseif name == "radio_name" then
+		return "Radio"
+	elseif name == "polter_name" then
+		return "Poltergeist"
+	elseif name == "vis_name" then
+		return "Visualizer"
+	elseif name == "defuser_name" then
+		return "Defuser"
+	elseif name == "stungun_name" then
+		return "UMP Prototype"
+	elseif name == "binoc_name" then
+		return "Binoculars"
 	elseif name == "item_radar" then
-        return "Radar"
+		return "Radar"
 	elseif name == "item_armor" then
-        return "Body Armor"
+		return "Body Armor"
 	elseif name == "dragon_elites_name" then
-        return "Dragon Elites"
+		return "Dragon Elites"
 	elseif name == "silenced_m4a1_name" then
-        return "Silenced M4A1"
+		return "Silenced M4A1"
 	elseif name == "slam_name" then
-        return "M4 SLAM"
+		return "M4 SLAM"
 	elseif name == "jihad_bomb_name" then
-        return "Jihad Bomb"
-    elseif name == "item_slashercloak" then --custom mods friends and I made ;)
+		return "Jihad Bomb"
+	elseif name == "item_slashercloak" then --custom mods friends and I made ;)
 		return "Slasher Cloak"
 	elseif name == "heartbeat_monitor_name" then
 		return "Heartbeat Monitor"
-	else
-        return name
-    end
+	end
+	return name
 end
 
 --recive the client name for the equipment they bought
 net.Receive("TotalStatistics_SendClientEquipmentName", function(len, ply)
-    local name = RenameWeps(net.ReadString())
+	local originalName = net.ReadString()
+	local name = RenameWeps(originalName)
 	local error = net.ReadBool()
-	if error then
-		print("Failed to find equipment ("..name..") bought by "..ply:Nick().." for [TTT] Total Statistics!")
-        return
-    end
+	if error and originalName == name then
+		print("Failed to find equipment ("..originalName..") bought by "..ply:Nick().." for [TTT] Total Statistics!")
+		return
+	end
 	if ply:IsBot() then return end
 
 	if ply:GetRole()==ROLE_DETECTIVE then
