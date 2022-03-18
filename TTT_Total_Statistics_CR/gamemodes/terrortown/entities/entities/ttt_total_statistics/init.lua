@@ -312,9 +312,14 @@ end)
 --recieve data request from client and table back
 util.AddNetworkString("TotalStatistics_PlayerStatsMessage")
 util.AddNetworkString("TotalStatistics_RequestPlayerStats")
-net.Receive("TotalStatistics_RequestPlayerStats", function(len, ply)
+net.Receive("TotalStatistics_RequestPlayerStats", function(_, ply)
+    local playerStatsJson = util.TableToJSON(PlayerStats)
+    local compressedString = util.Compress(playerStatsJson)
+    local len = #compressedString
+
 	net.Start("TotalStatistics_PlayerStatsMessage")
-	net.WriteTable(PlayerStats)
+    net.WriteUInt(len, 16)
+    net.WriteData(compressedString, len)
 	net.Send(ply)
 end)
 
