@@ -1,4 +1,4 @@
-include('shared.lua')
+include("shared.lua")
 
 local AccessButton = vgui.Create("DButton")
 AccessButton:SetText("Total Statistics")
@@ -118,20 +118,20 @@ local function DisplayWindow()
 			rolestring_cap = rolestring:sub(1, 1):upper() .. rolestring:sub(2)
 			if str == rolestring_cap then
 				for id, record in pairs(PlayerStats) do
-					DataDisplay:AddLine(record.Nickname, math.Round((record[rolestring..'Wins'] or 0)/(record[rolestring..'Rounds'] or 1)*100, 1))
+					DataDisplay:AddLine(record.Nickname, math.Round((record[rolestring.."Wins"] or 0)/(record[rolestring.."Rounds"] or 1)*100, 1))
 					DataDisplay:SortByColumn(2, true)
 				end
 			end
 		end
 	end
 	RoleDropdown:Hide()
-	
+
 	local YourStatsLabel = vgui.Create("DLabel", MainWindow)
 	YourStatsLabel:SetText("Subcategory:")
 	YourStatsLabel:SetPos(20, 65)
 	YourStatsLabel:SetSize(90, 25)
 	YourStatsLabel:Hide()
-	
+
 	local YourStatsDropdown = vgui.Create("DComboBox", MainWindow)
 	YourStatsDropdown:SetText("")
 	YourStatsDropdown:SetPos(110, 65)
@@ -159,12 +159,12 @@ local function DisplayWindow()
 						for r = 0, ROLE_MAX do
 							rolestring = ROLE_STRINGS[r]
 							rolestring_cap = rolestring:sub(1, 1):upper() .. rolestring:sub(2)
-							DataDisplay:AddLine(rolestring_cap, math.Round((record[rolestring..'Wins'] or 0)/(record[rolestring..'Rounds'] or 1)*100), 1)
+							DataDisplay:AddLine(rolestring_cap, math.Round((record[rolestring.."Wins"] or 0)/(record[rolestring.."Rounds"] or 1)*100), 1)
 						end
 					end
 				end
 			end
-		
+
 		elseif str == "Times played role" then
 		DescriptionLabel:SetText("Rounds playing each role (times role played/total rounds played).")
 			for id, record in pairs(PlayerStats) do
@@ -181,16 +181,16 @@ local function DisplayWindow()
 							for r = 3, ROLE_MAX do
 								rolestring = ROLE_STRINGS[r]
 								rolestring_cap = rolestring:sub(1, 1):upper() .. rolestring:sub(2)
-								DataDisplay:AddLine(rolestring_cap, (record[rolestring..'Rounds'] or 0).."/"..record.TotalRoundsPlayed)
+								DataDisplay:AddLine(rolestring_cap, (record[rolestring.."Rounds"] or 0).."/"..record.TotalRoundsPlayed)
 							end
 						end
 					end
 				end
 			end
-		
+
 		elseif str == "Best traitor partners" then
 			DescriptionLabel:SetText("Win rate when on a traitor team with each player (%).")
-			
+
 			if (PlayerStats[LocalPlayer():SteamID()]["TraitorPartners"]==nil) then
 				DataDisplay:AddLine("No partners yet", "No partners yet")
 			else
@@ -199,10 +199,10 @@ local function DisplayWindow()
 				end
 			end
 			DataDisplay:SortByColumn(2, true)
-			
+
 		elseif str == "Favourite detective equipment" then
 			DescriptionLabel:SetText("Times you've bought each detective item")
-			
+
 			if (PlayerStats[LocalPlayer():SteamID()]["DetectiveEquipment"]==nil) then
 				DataDisplay:AddLine("No equipment yet", "No equipment yet")
 			else
@@ -211,10 +211,10 @@ local function DisplayWindow()
 				end
 			end
 			DataDisplay:SortByColumn(2, true)
-		
+
 		elseif str == "Favourite traitor equipment" then
 			DescriptionLabel:SetText("Times you've bought each traitor item")
-			
+
 			if (PlayerStats[LocalPlayer():SteamID()]["TraitorEquipment"]==nil) then
 				DataDisplay:AddLine("No equipment yet", "No equipment yet")
 			else
@@ -223,12 +223,12 @@ local function DisplayWindow()
 				end
 			end
 			DataDisplay:SortByColumn(2, true)
-		
+
 		end
-		
+
 	end
 	YourStatsDropdown:Hide()
-	
+
 	local StatisticDropdown = vgui.Create("DComboBox", MainWindow)
 	StatisticDropdown:SetText("")
 	StatisticDropdown:SetPos(110, 35)
@@ -255,7 +255,7 @@ local function DisplayWindow()
 			DescriptionLabel:SetText("")
 			YourStatsDropdown:Show()
 			YourStatsLabel:Show()
-			
+
 		elseif str == "Server average role win rates" then
 			DescriptionLabel:SetText("Server-wide role average win rates (%).")
 			local AvgDRate = 0
@@ -272,7 +272,7 @@ local function DisplayWindow()
 			DataDisplay:AddLine("Detective", AvgDRate)
 			DataDisplay:AddLine("Innocent", AvgIRate)
 			DataDisplay:AddLine("Traitor", AvgTRate)
-			
+
 			if(CustomRolesEnabled) then
 				local AvgRate = {}
 				local sRolestring = ""
@@ -283,7 +283,7 @@ local function DisplayWindow()
 					AvgRate[sRolestring] = 0
 					for id, record in pairs(PlayerStats) do
 						AvgRate[sRolestring] = AvgRate[sRolestring] +
-								((record[rolestring..'Wins'] or 0)/(record[rolestring..'Rounds'] or 1)*100)
+								((record[rolestring.."Wins"] or 0)/(record[rolestring.."Rounds"] or 1)*100)
 					end
 					AvgRate[sRolestring] = math.Round(AvgRate[sRolestring] / table.Count(PlayerStats), 1)
 					DataDisplay:AddLine(rolestring_cap, AvgRate[sRolestring])
@@ -294,28 +294,28 @@ local function DisplayWindow()
 			DescriptionLabel:SetText("Average role win rate (%).")
 			RoleLabel:Show()
 			RoleDropdown:Show()
-		
+
 		elseif str == "Most rounds played" then
 			DescriptionLabel:SetText("Total number of rounds played.")
 			for id, record in pairs(PlayerStats) do
 				DataDisplay:AddLine(record.Nickname, record.TotalRoundsPlayed)
 				DataDisplay:SortByColumn(2, true)
 			end
-			
+
 		elseif str == "Most often killed first" then
 			DescriptionLabel:SetText("Percentage of their rounds that each player is killed first (%).")
 			for id, record in pairs(PlayerStats) do
 				DataDisplay:AddLine(record.Nickname, math.Round(record.KilledFirst / record.TotalRoundsPlayed * 100, 2))
 				DataDisplay:SortByColumn(2, true)
 			end
-			
+
 		elseif str == "Most crooked cop" then
 			DescriptionLabel:SetText("Average number of innocents killed per round as detective.")
 			for id, record in pairs(PlayerStats) do
 				DataDisplay:AddLine(record.Nickname, math.Round(record.CrookedCop/record.detectiveRounds, 2))
 				DataDisplay:SortByColumn(2, true)
 			end
-			
+
 		elseif str == "Most trigger-happy innocent" then
 			DescriptionLabel:SetText("Average number of innocent players killed while on the innocent team.")
 			for id, record in pairs(PlayerStats) do
@@ -323,17 +323,17 @@ local function DisplayWindow()
 				(record.innocentRounds + record.MercenaryRounds + record.GlitchRounds + record.PhantomRounds), 2))
 				DataDisplay:SortByColumn(2, true)
 			end
-		
+
 		elseif str == "Least safe near ledges" then
 			DescriptionLabel:SetText("Total fall damage taken.")
 			for id, record in pairs(PlayerStats) do
 				DataDisplay:AddLine(record.Nickname, record.TotalFallDamage)
 				DataDisplay:SortByColumn(2, true)
 			end
-		
+
 		elseif str == "Best traitor partners" then
 			DescriptionLabel:SetText("Each player's best traitor partner (win rate %).")
-			
+
 			for id, record in pairs(PlayerStats) do
 				local bestPartner = {Nick = "No traitor partners yet", Winrate = -1}
 				local thisPartnerWinRate = -1
@@ -346,10 +346,10 @@ local function DisplayWindow()
 				end
 				DataDisplay:AddLine(record.Nickname, bestPartner.Nick.." ("..bestPartner.Winrate.."%)")
 			end
-		
+
 		elseif str == "Favourite detective equipment" then
 			DescriptionLabel:SetText("Each player's favourite detective equipment (times bought).")
-			
+
 			for id, record in pairs(PlayerStats) do
 				local favouriteEquipment = "No equipment bought yet"
 				local mostTimesBought = 0
@@ -361,10 +361,10 @@ local function DisplayWindow()
 				end
 				DataDisplay:AddLine(record.Nickname, favouriteEquipment.." ("..mostTimesBought..")")
 			end
-		
+
 		elseif str == "Favourite traitor equipment" then
 			DescriptionLabel:SetText("Each player's favourite traitor equipment (times bought).")
-			
+
 			for id, record in pairs(PlayerStats) do
 				local favouriteEquipment = "No equipment bought yet"
 				local mostTimesBought = 0
@@ -379,7 +379,7 @@ local function DisplayWindow()
 
 		end
 	end
-	
+
 	gui.EnableScreenClicker(true)
 end
 
@@ -416,7 +416,7 @@ hook.Add("TTTBoughtItem", "TotalStatistics_PlayerBoughtItem", function(is_item, 
 			return
 		end
 	end
-	
+
 	--if its not on the SWEP list, then check the equipment item menu for the role
 	if LocalPlayer():GetRole() == ROLE_DETECTIVE then
 		for k, v in pairs (EquipmentItems[ROLE_DETECTIVE]) do
@@ -439,7 +439,7 @@ hook.Add("TTTBoughtItem", "TotalStatistics_PlayerBoughtItem", function(is_item, 
 			end
 		end
 	end
-	
+
 	--if we can't find it, let the server know
 	error = true
 	net.Start("TotalStatistics_SendClientEquipmentName")
