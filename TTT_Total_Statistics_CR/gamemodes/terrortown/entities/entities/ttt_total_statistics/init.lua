@@ -3,6 +3,8 @@ AddCSLuaFile("shared.lua")
 
 include("shared.lua")
 
+local StringLower = string.lower
+
 --declare our variables for various shenanigans
 local PlayerStats = {}
 local FirstBeenKilled = false
@@ -17,11 +19,16 @@ util.AddNetworkString("TotalStatistics_SendClientEquipmentName")
 
 if not CR_VERSION then
 	ROLE_STRINGS = {
-		[ROLE_INNOCENT] = "innocent",
-		[ROLE_TRAITOR] = "traitor",
-		[ROLE_DETECTIVE] = "detective"
+		[ROLE_INNOCENT] = "Innocent",
+		[ROLE_TRAITOR] = "Traitor",
+		[ROLE_DETECTIVE] = "Detective"
 	}
 	ROLE_MAX = 2
+end
+
+local function SavePlayerStats()
+	local str = util.TableToJSON(PlayerStats, true)
+	file.Write("ttt/ttt_total_statistics/stats.txt", str)
 end
 
 local function LoadPlayerStats()
@@ -35,38 +42,56 @@ local function LoadPlayerStats()
 	--check if format is up to date and update it if not
 	local updated = false
 	for steamID, record in pairs(PlayerStats) do
-		if not PlayerStats[steamID]["Nickname"] then
+		-- Replace all lowerKeys with UpperKeys
+		for _, key in ipairs(table.GetKeys(record)) do
+			local upper, lower = TotalStats.GetRecordNames(key)
+			if record[lower] and not record[upper] then
+				record[upper] = record[lower]
+				record[lower] = nil
+				updated = true
+			elseif record[lower] and record[upper] then
+				if type(record[lower]) == "number" and type(record[upper]) == "number" then
+					record[upper] = record[upper] + record[lower]
+				end
+				record[lower] = nil
+				updated = true
+			end
+		end
+
+		if not record["Nickname"] then
 			for _ , ply in ipairs(player.GetAll()) do
 				if ply:SteamID() == steamID then
-					PlayerStats[steamID]["Nickname"] = ply:Nick()
+					record["Nickname"] = ply:Nick()
 				end
 			end
 		end
-		if PlayerStats[steamID]["DetectiveEquipment"] == nil then
+		if record["DetectiveEquipment"] == nil then
 			updated = true
-			PlayerStats[steamID]["DetectiveEquipment"] = {}
+			record["DetectiveEquipment"] = {}
 		end
-		if PlayerStats[steamID]["TraitorEquipment"] ==nil then
+		if record["TraitorEquipment"] == nil then
 			updated = true
-			PlayerStats[steamID]["TraitorEquipment"] = {}
+			record["TraitorEquipment"] = {}
 		end
 	end
+
 	if updated then
 		print("Updated ttt_total_statistics stats.txt to latest version!")
-		updated = false
+		SavePlayerStats()
 	end
 end
 
+LoadPlayerStats()
+
 local function AddNewPlayer(ID, nick)
-	PlayerStats[ID] = {}
+	PlayerStats[ID] = {
+		Nickname = nick
+	}
 
-	PlayerStats[ID]["Nickname"] = nick
-
-	local rolestring = ""
 	for r = 0, ROLE_MAX do
-		rolestring = ROLE_STRINGS[r]
-		PlayerStats[ID][rolestring.."Rounds"] = 0
-		PlayerStats[ID][rolestring.."Wins"] = 0
+		local rolestring = ROLE_STRINGS[r]
+		PlayerStats[ID][rolestring .. "Rounds"] = 0
+		PlayerStats[ID][rolestring .. "Wins"] = 0
 	end
 
 	local stats = {"CrookedCop", "TriggerHappyInnocent", "TotalFallDamage", "KilledFirst", "TotalRoundsPlayed"}
@@ -80,20 +105,35 @@ local function AddNewPlayer(ID, nick)
 	end
 end
 
-local function SavePlayerStats()
-	local str = util.TableToJSON(PlayerStats, true)
-	file.Write("ttt/ttt_total_statistics/stats.txt", str)
-end
-
---local function ResetAllPlayerStats()
---	file.Delete("ttt/ttt_total_statistics/stats.txt")
---	LoadPlayerStats()
---end
-
-concommand.Add("ttt_totalstatistics_reset", function(ply, cmd, args, str)
+local function ResetAllPlayerStats()
 	file.Delete("ttt/ttt_total_statistics/stats.txt")
 	table.Empty(PlayerStats)
 	LoadPlayerStats()
+end
+
+concommand.Add("ttt_totalstatistics_remove_byid", function(ply, cmd, args, str)
+	if #args == 0 then return end
+	local id = args[1]
+	if PlayerStats[id] then
+		PlayerStats[id] = nil
+		SavePlayerStats()
+	end
+end)
+
+concommand.Add("ttt_totalstatistics_remove_byname", function(ply, cmd, args, str)
+	if #args == 0 then return end
+	local name = StringLower(args[1])
+	for id, record in pairs(PlayerStats) do
+		if StringLower(record["Nickname"]) == name then
+			PlayerStats[id] = nil
+			SavePlayerStats()
+			return
+		end
+	end
+end)
+
+concommand.Add("ttt_totalstatistics_reset", function(ply, cmd, args, str)
+	ResetAllPlayerStats()
 	for k, v in pairs(player.GetAll()) do
 		if not v:IsBot() then
 			AddNewPlayer(v:SteamID(), v:Nick())
@@ -109,8 +149,6 @@ end)
 concommand.Add("ttt_totalstatistics_debuglastround", function(ply, cmd, args, str)
 	print(PreviousRoundDebug)
 end)
-
-LoadPlayerStats()
 
 gameevent.Listen("player_connect")
 hook.Add("player_connect", "TotalStatistics_CheckIfNewPlayer", function(data)
