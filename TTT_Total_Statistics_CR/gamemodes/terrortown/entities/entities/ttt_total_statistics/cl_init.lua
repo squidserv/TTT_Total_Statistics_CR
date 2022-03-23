@@ -49,6 +49,15 @@ net.Receive("TotalStatistics_PlayerStatsMessage", function()
 	PlayerStats = util.JSONToTable(playerStatsJson)
 end)
 
+local function GetRoleRate(record, role)
+	local wins = TotalStats.GetValue(record, role .. "Wins")
+	local rounds = math.max(wins, TotalStats.GetValue(record, role .. "Rounds", 1))
+	if rounds > 0 then
+		return wins/rounds*100
+	end
+	return 1
+end
+
 local function DisplayWindow()
 
 	GetPlayerData()
@@ -151,9 +160,9 @@ local function DisplayWindow()
 			DescriptionLabel:SetText("Average role win rate (%).")
 			for id, record in pairs(PlayerStats) do
 				if(id==LocalPlayer():SteamID()) then
-					DataDisplay:AddLine("Detective", math.Round(TotalStats.GetValue(record, "DetectiveWins")/TotalStats.GetValue(record, "DetectiveRounds")*100), 1)
-					DataDisplay:AddLine("Innocent", math.Round(TotalStats.GetValue(record, "InnocentWins")/TotalStats.GetValue(record, "InnocentRounds")*100), 1)
-					DataDisplay:AddLine("Traitor", math.Round(TotalStats.GetValue(record, "TraitorWins")/TotalStats.GetValue(record, "TraitorRounds")*100), 1)
+					DataDisplay:AddLine("Detective", math.Round(GetRoleRate(record, "Detective"), 1))
+					DataDisplay:AddLine("Innocent", math.Round(GetRoleRate(record, "Innocent"), 1))
+					DataDisplay:AddLine("Traitor", math.Round(GetRoleRate(record, "Traitor"), 1))
 				end
 			end
 			if(CustomRolesEnabled) then
@@ -161,8 +170,8 @@ local function DisplayWindow()
 					if(id==LocalPlayer():SteamID()) then
 						for r = 0, ROLE_MAX do
 							rolestring = ROLE_STRINGS[r]
-							rolestring_cap = rolestring:sub(1, 1):upper() .. rolestring:sub(2)
-							DataDisplay:AddLine(rolestring_cap, math.Round(TotalStats.GetValue(record, rolestring.."Wins")/TotalStats.GetValue(record, rolestring.."Rounds", 1)*100), 1)
+							rolestring_cap = string.Capitalize(rolestring)
+							DataDisplay:AddLine(rolestring_cap, math.Round(GetRoleRate(record, rolestring), 1))
 						end
 					end
 				end
@@ -270,10 +279,10 @@ local function DisplayWindow()
 			local AvgDRate = 0
 			local AvgIRate = 0
 			local AvgTRate = 0
-			for id, record in pairs(PlayerStats) do
-				AvgDRate = AvgDRate + (TotalStats.GetValue(record, "DetectiveWins")/TotalStats.GetValue(record, "DetectiveRounds")*100)
-				AvgIRate = AvgIRate + (TotalStats.GetValue(record, "InnocentWins")/TotalStats.GetValue(record, "InnocentRounds")*100)
-				AvgTRate = AvgTRate + (TotalStats.GetValue(record, "TraitorWins")/TotalStats.GetValue(record, "TraitorRounds")*100)
+			for _, record in pairs(PlayerStats) do
+				AvgDRate = AvgDRate + GetRoleRate(record, "Detective")
+				AvgIRate = AvgIRate + GetRoleRate(record, "Innocent")
+				AvgTRate = AvgTRate + GetRoleRate(record, "Traitor")
 			end
 			AvgDRate = math.Round(AvgDRate / table.Count(PlayerStats), 1)
 			AvgIRate = math.Round(AvgIRate / table.Count(PlayerStats), 1)
@@ -288,11 +297,10 @@ local function DisplayWindow()
 				for r = 3, ROLE_MAX do
 					sRolestring = ROLE_STRINGS_SHORT[r]
 					rolestring = ROLE_STRINGS[r]
-					rolestring_cap = rolestring:sub(1, 1):upper() .. rolestring:sub(2)
+					rolestring_cap = string.Capitalize(rolestring)
 					AvgRate[sRolestring] = 0
 					for id, record in pairs(PlayerStats) do
-						AvgRate[sRolestring] = AvgRate[sRolestring] +
-								(TotalStats.GetValue(record, rolestring.."Wins")/TotalStats.GetValue(record, rolestring.."Rounds", 1)*100)
+						AvgRate[sRolestring] = AvgRate[sRolestring] + GetRoleRate(record, rolestring)
 					end
 					AvgRate[sRolestring] = math.Round(AvgRate[sRolestring] / table.Count(PlayerStats), 1)
 					DataDisplay:AddLine(rolestring_cap, AvgRate[sRolestring])
