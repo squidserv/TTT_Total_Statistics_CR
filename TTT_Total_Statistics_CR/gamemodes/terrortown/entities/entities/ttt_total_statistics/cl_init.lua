@@ -1,4 +1,4 @@
-include('shared.lua')
+include("shared.lua")
 
 local AccessButton = vgui.Create("DButton")
 AccessButton:SetText("Total Statistics")
@@ -43,8 +43,20 @@ local function GetPlayerData()
 end
 
 net.Receive("TotalStatistics_PlayerStatsMessage", function()
-	PlayerStats = net.ReadTable()
+	local len = net.ReadUInt(16)
+	local compressedString = net.ReadData(len)
+	local playerStatsJson = util.Decompress(compressedString)
+	PlayerStats = util.JSONToTable(playerStatsJson)
 end)
+
+local function GetRoleRate(record, role)
+	local wins = TotalStats.GetValue(record, role .. "Wins")
+	local rounds = math.max(wins, TotalStats.GetValue(record, role .. "Rounds", 1))
+	if rounds > 0 then
+		return wins/rounds*100
+	end
+	return 1
+end
 
 local function DisplayWindow()
 
@@ -118,20 +130,20 @@ local function DisplayWindow()
 			rolestring_cap = rolestring:sub(1, 1):upper() .. rolestring:sub(2)
 			if str == rolestring_cap then
 				for id, record in pairs(PlayerStats) do
-					DataDisplay:AddLine(record.Nickname, math.Round((record[rolestring..'Wins'] or 0)/(record[rolestring..'Rounds'] or 1)*100, 1))
+					DataDisplay:AddLine(TotalStats.GetValue(record, "Nickname", "<UNKNOWN>"), math.Round(TotalStats.GetValue(record, rolestring.."Wins")/TotalStats.GetValue(record, rolestring.."Rounds", 1)*100, 1))
 					DataDisplay:SortByColumn(2, true)
 				end
 			end
 		end
 	end
 	RoleDropdown:Hide()
-	
+
 	local YourStatsLabel = vgui.Create("DLabel", MainWindow)
 	YourStatsLabel:SetText("Subcategory:")
 	YourStatsLabel:SetPos(20, 65)
 	YourStatsLabel:SetSize(90, 25)
 	YourStatsLabel:Hide()
-	
+
 	local YourStatsDropdown = vgui.Create("DComboBox", MainWindow)
 	YourStatsDropdown:SetText("")
 	YourStatsDropdown:SetPos(110, 65)
@@ -148,9 +160,9 @@ local function DisplayWindow()
 			DescriptionLabel:SetText("Average role win rate (%).")
 			for id, record in pairs(PlayerStats) do
 				if(id==LocalPlayer():SteamID()) then
-					DataDisplay:AddLine("Detective", math.Round(record.detectiveWins/record.detectiveRounds*100), 1)
-					DataDisplay:AddLine("Innocent", math.Round(record.innocentWins/record.innocentRounds*100), 1)
-					DataDisplay:AddLine("Traitor", math.Round(record.traitorWins/record.traitorRounds*100), 1)
+					DataDisplay:AddLine("Detective", math.Round(GetRoleRate(record, "Detective"), 1))
+					DataDisplay:AddLine("Innocent", math.Round(GetRoleRate(record, "Innocent"), 1))
+					DataDisplay:AddLine("Traitor", math.Round(GetRoleRate(record, "Traitor"), 1))
 				end
 			end
 			if(CustomRolesEnabled) then
@@ -158,20 +170,20 @@ local function DisplayWindow()
 					if(id==LocalPlayer():SteamID()) then
 						for r = 0, ROLE_MAX do
 							rolestring = ROLE_STRINGS[r]
-							rolestring_cap = rolestring:sub(1, 1):upper() .. rolestring:sub(2)
-							DataDisplay:AddLine(rolestring_cap, math.Round((record[rolestring..'Wins'] or 0)/(record[rolestring..'Rounds'] or 1)*100), 1)
+							rolestring_cap = string.Capitalize(rolestring)
+							DataDisplay:AddLine(rolestring_cap, math.Round(GetRoleRate(record, rolestring), 1))
 						end
 					end
 				end
 			end
-		
+
 		elseif str == "Times played role" then
 		DescriptionLabel:SetText("Rounds playing each role (times role played/total rounds played).")
 			for id, record in pairs(PlayerStats) do
 				if(id==LocalPlayer():SteamID()) then
-					DataDisplay:AddLine("Detective", record.detectiveRounds.."/"..record.TotalRoundsPlayed)
-					DataDisplay:AddLine("Innocent", record.innocentRounds.."/"..record.TotalRoundsPlayed)
-					DataDisplay:AddLine("Traitor", record.traitorRounds.."/"..record.TotalRoundsPlayed)
+					DataDisplay:AddLine("Detective", TotalStats.GetValue(record, "DetectiveRounds").."/"..TotalStats.GetValue(record, "TotalRoundsPlayed"))
+					DataDisplay:AddLine("Innocent", TotalStats.GetValue(record, "InnocentRounds").."/"..TotalStats.GetValue(record, "TotalRoundsPlayed"))
+					DataDisplay:AddLine("Traitor", TotalStats.GetValue(record, "TraitorRounds").."/"..TotalStats.GetValue(record, "TotalRoundsPlayed"))
 				end
 			end
 			if(CustomRolesEnabled) then
@@ -181,54 +193,60 @@ local function DisplayWindow()
 							for r = 3, ROLE_MAX do
 								rolestring = ROLE_STRINGS[r]
 								rolestring_cap = rolestring:sub(1, 1):upper() .. rolestring:sub(2)
-								DataDisplay:AddLine(rolestring_cap, (record[rolestring..'Rounds'] or 0).."/"..record.TotalRoundsPlayed)
+								DataDisplay:AddLine(rolestring_cap, (TotalStats.GetValue(record, rolestring.."Rounds")).."/"..TotalStats.GetValue(record, "TotalRoundsPlayed"))
 							end
 						end
 					end
 				end
 			end
-		
+
 		elseif str == "Best traitor partners" then
 			DescriptionLabel:SetText("Win rate when on a traitor team with each player (%).")
-			
-			if (PlayerStats[LocalPlayer():SteamID()]["TraitorPartners"]==nil) then
+
+			local record = PlayerStats[LocalPlayer():SteamID()]
+			local partners = TotalStats.GetValue(record, "TraitorPartners", nil)
+			if (partners==nil) then
 				DataDisplay:AddLine("No partners yet", "No partners yet")
 			else
-				for partnerID, partnerTable in pairs(PlayerStats[LocalPlayer():SteamID()]["TraitorPartners"]) do
+				for partnerID, partnerTable in pairs(partners) do
 					DataDisplay:AddLine(partnerTable.Nick, math.Round(partnerTable.Wins/partnerTable.Rounds*100), 1)
 				end
 			end
 			DataDisplay:SortByColumn(2, true)
-			
+
 		elseif str == "Favourite detective equipment" then
 			DescriptionLabel:SetText("Times you've bought each detective item")
-			
-			if (PlayerStats[LocalPlayer():SteamID()]["DetectiveEquipment"]==nil) then
+
+			local record = PlayerStats[LocalPlayer():SteamID()]
+			local equip = TotalStats.GetValue(record, "DetectiveEquipment", nil)
+			if (equip==nil) then
 				DataDisplay:AddLine("No equipment yet", "No equipment yet")
 			else
-				for itemName, timesBought in pairs(PlayerStats[LocalPlayer():SteamID()]["DetectiveEquipment"]) do
+				for itemName, timesBought in pairs(equip) do
 					DataDisplay:AddLine(itemName, timesBought)
 				end
 			end
 			DataDisplay:SortByColumn(2, true)
-		
+
 		elseif str == "Favourite traitor equipment" then
 			DescriptionLabel:SetText("Times you've bought each traitor item")
-			
-			if (PlayerStats[LocalPlayer():SteamID()]["TraitorEquipment"]==nil) then
+
+			local record = PlayerStats[LocalPlayer():SteamID()]
+			local equip = TotalStats.GetValue(record, "TraitorEquipment", nil)
+			if (equip==nil) then
 				DataDisplay:AddLine("No equipment yet", "No equipment yet")
 			else
-				for itemName, timesBought in pairs(PlayerStats[LocalPlayer():SteamID()]["TraitorEquipment"]) do
+				for itemName, timesBought in pairs(equip) do
 					DataDisplay:AddLine(itemName, timesBought)
 				end
 			end
 			DataDisplay:SortByColumn(2, true)
-		
+
 		end
-		
+
 	end
 	YourStatsDropdown:Hide()
-	
+
 	local StatisticDropdown = vgui.Create("DComboBox", MainWindow)
 	StatisticDropdown:SetText("")
 	StatisticDropdown:SetPos(110, 35)
@@ -255,16 +273,16 @@ local function DisplayWindow()
 			DescriptionLabel:SetText("")
 			YourStatsDropdown:Show()
 			YourStatsLabel:Show()
-			
+
 		elseif str == "Server average role win rates" then
 			DescriptionLabel:SetText("Server-wide role average win rates (%).")
 			local AvgDRate = 0
 			local AvgIRate = 0
 			local AvgTRate = 0
-			for id, record in pairs(PlayerStats) do
-				AvgDRate = AvgDRate + (record.detectiveWins/record.detectiveRounds*100)
-				AvgIRate = AvgIRate + (record.innocentWins/record.innocentRounds*100)
-				AvgTRate = AvgTRate + (record.traitorWins/record.traitorRounds*100)
+			for _, record in pairs(PlayerStats) do
+				AvgDRate = AvgDRate + GetRoleRate(record, "Detective")
+				AvgIRate = AvgIRate + GetRoleRate(record, "Innocent")
+				AvgTRate = AvgTRate + GetRoleRate(record, "Traitor")
 			end
 			AvgDRate = math.Round(AvgDRate / table.Count(PlayerStats), 1)
 			AvgIRate = math.Round(AvgIRate / table.Count(PlayerStats), 1)
@@ -272,18 +290,17 @@ local function DisplayWindow()
 			DataDisplay:AddLine("Detective", AvgDRate)
 			DataDisplay:AddLine("Innocent", AvgIRate)
 			DataDisplay:AddLine("Traitor", AvgTRate)
-			
+
 			if(CustomRolesEnabled) then
 				local AvgRate = {}
 				local sRolestring = ""
 				for r = 3, ROLE_MAX do
 					sRolestring = ROLE_STRINGS_SHORT[r]
 					rolestring = ROLE_STRINGS[r]
-					rolestring_cap = rolestring:sub(1, 1):upper() .. rolestring:sub(2)
+					rolestring_cap = string.Capitalize(rolestring)
 					AvgRate[sRolestring] = 0
 					for id, record in pairs(PlayerStats) do
-						AvgRate[sRolestring] = AvgRate[sRolestring] +
-								((record[rolestring..'Wins'] or 0)/(record[rolestring..'Rounds'] or 1)*100)
+						AvgRate[sRolestring] = AvgRate[sRolestring] + GetRoleRate(record, rolestring)
 					end
 					AvgRate[sRolestring] = math.Round(AvgRate[sRolestring] / table.Count(PlayerStats), 1)
 					DataDisplay:AddLine(rolestring_cap, AvgRate[sRolestring])
@@ -294,92 +311,92 @@ local function DisplayWindow()
 			DescriptionLabel:SetText("Average role win rate (%).")
 			RoleLabel:Show()
 			RoleDropdown:Show()
-		
+
 		elseif str == "Most rounds played" then
 			DescriptionLabel:SetText("Total number of rounds played.")
 			for id, record in pairs(PlayerStats) do
-				DataDisplay:AddLine(record.Nickname, record.TotalRoundsPlayed)
+				DataDisplay:AddLine(TotalStats.GetValue(record, "Nickname", "<UNKNOWN>"), TotalStats.GetValue(record, "TotalRoundsPlayed"))
 				DataDisplay:SortByColumn(2, true)
 			end
-			
+
 		elseif str == "Most often killed first" then
 			DescriptionLabel:SetText("Percentage of their rounds that each player is killed first (%).")
 			for id, record in pairs(PlayerStats) do
-				DataDisplay:AddLine(record.Nickname, math.Round(record.KilledFirst / record.TotalRoundsPlayed * 100, 2))
+				DataDisplay:AddLine(TotalStats.GetValue(record, "Nickname", "<UNKNOWN>"), math.Round(TotalStats.GetValue(record, "KilledFirst") / TotalStats.GetValue(record, "TotalRoundsPlayed") * 100, 2))
 				DataDisplay:SortByColumn(2, true)
 			end
-			
+
 		elseif str == "Most crooked cop" then
 			DescriptionLabel:SetText("Average number of innocents killed per round as detective.")
 			for id, record in pairs(PlayerStats) do
-				DataDisplay:AddLine(record.Nickname, math.Round(record.CrookedCop/record.detectiveRounds, 2))
+				DataDisplay:AddLine(TotalStats.GetValue(record, "Nickname", "<UNKNOWN>"), math.Round(TotalStats.GetValue(record, "CrookedCop") / TotalStats.GetValue(record, "DetectiveRounds"), 2))
 				DataDisplay:SortByColumn(2, true)
 			end
-			
+
 		elseif str == "Most trigger-happy innocent" then
 			DescriptionLabel:SetText("Average number of innocent players killed while on the innocent team.")
 			for id, record in pairs(PlayerStats) do
-				DataDisplay:AddLine(record.Nickname, math.Round(record.TriggerHappyInnocent/
-				(record.innocentRounds + record.MercenaryRounds + record.GlitchRounds + record.PhantomRounds), 2))
+				DataDisplay:AddLine(TotalStats.GetValue(record, "Nickname", "<UNKNOWN>"), math.Round(TotalStats.GetValue(record, "TriggerHappyInnocent")/
+				(TotalStats.GetValue(record, "InnocentRounds", 1) + TotalStats.GetValue(record, "MercenaryRounds") + TotalStats.GetValue(record, "GlitchRounds") + TotalStats.GetValue(record, "PhantomRounds")), 2))
 				DataDisplay:SortByColumn(2, true)
 			end
-		
+
 		elseif str == "Least safe near ledges" then
 			DescriptionLabel:SetText("Total fall damage taken.")
 			for id, record in pairs(PlayerStats) do
-				DataDisplay:AddLine(record.Nickname, record.TotalFallDamage)
+				DataDisplay:AddLine(TotalStats.GetValue(record, "Nickname", "<UNKNOWN>"), TotalStats.GetValue(record, "TotalFallDamage"))
 				DataDisplay:SortByColumn(2, true)
 			end
-		
+
 		elseif str == "Best traitor partners" then
 			DescriptionLabel:SetText("Each player's best traitor partner (win rate %).")
-			
+
 			for id, record in pairs(PlayerStats) do
 				local bestPartner = {Nick = "No traitor partners yet", Winrate = -1}
 				local thisPartnerWinRate = -1
-				for partnerID, partnerTable in pairs(record["TraitorPartners"]) do
+				for partnerID, partnerTable in pairs(TotalStats.GetValue(record, "TraitorPartners")) do
 					thisPartnerWinRate = math.Round(partnerTable.Wins/partnerTable.Rounds*100, 1)
 					if thisPartnerWinRate > bestPartner.Winrate then
 						bestPartner.Winrate = thisPartnerWinRate
 						bestPartner.Nick = partnerTable.Nick
 					end
 				end
-				DataDisplay:AddLine(record.Nickname, bestPartner.Nick.." ("..bestPartner.Winrate.."%)")
+				DataDisplay:AddLine(TotalStats.GetValue(record, "Nickname", "<UNKNOWN>"), bestPartner.Nick.." ("..bestPartner.Winrate.."%)")
 			end
-		
+
 		elseif str == "Favourite detective equipment" then
 			DescriptionLabel:SetText("Each player's favourite detective equipment (times bought).")
-			
+
 			for id, record in pairs(PlayerStats) do
 				local favouriteEquipment = "No equipment bought yet"
 				local mostTimesBought = 0
-				for itemName, thisItemTimesBought in pairs(record["DetectiveEquipment"]) do
+				for itemName, thisItemTimesBought in pairs(TotalStats.GetValue(record, "DetectiveEquipment")) do
 					if thisItemTimesBought > mostTimesBought then
 						favouriteEquipment = itemName
 						mostTimesBought = thisItemTimesBought
 					end
 				end
-				DataDisplay:AddLine(record.Nickname, favouriteEquipment.." ("..mostTimesBought..")")
+				DataDisplay:AddLine(TotalStats.GetValue(record, "Nickname", "<UNKNOWN>"), favouriteEquipment.." ("..mostTimesBought..")")
 			end
-		
+
 		elseif str == "Favourite traitor equipment" then
 			DescriptionLabel:SetText("Each player's favourite traitor equipment (times bought).")
-			
+
 			for id, record in pairs(PlayerStats) do
 				local favouriteEquipment = "No equipment bought yet"
 				local mostTimesBought = 0
-				for itemName, thisItemTimesBought in pairs(record["TraitorEquipment"]) do
+				for itemName, thisItemTimesBought in pairs(TotalStats.GetValue(record, "TraitorEquipment")) do
 					if thisItemTimesBought > mostTimesBought then
 						favouriteEquipment = itemName
 						mostTimesBought = thisItemTimesBought
 					end
 				end
-				DataDisplay:AddLine(record.Nickname, favouriteEquipment.." ("..mostTimesBought..")")
+				DataDisplay:AddLine(TotalStats.GetValue(record, "Nickname", "<UNKNOWN>"), favouriteEquipment.." ("..mostTimesBought..")")
 			end
 
 		end
 	end
-	
+
 	gui.EnableScreenClicker(true)
 end
 
@@ -387,63 +404,37 @@ AccessButton.DoClick = function()
 	DisplayWindow()
 end
 
+local function GetItemName(item, role)
+	local id = tonumber(item)
+	local info = GetEquipmentItemById and GetEquipmentItemById(id) or GetEquipmentItem(role, id)
+	return info and LANG.TryTranslation(info.name) or item
+end
+
+function GetWeaponName(item)
+	for _, v in ipairs(weapons.GetList()) do
+		if item == WEPS.GetClass(v) then
+			return LANG.TryTranslation(v.PrintName)
+		end
+	end
+
+	return item
+end
+
 hook.Add("TTTBoughtItem", "TotalStatistics_PlayerBoughtItem", function(is_item, equipment)
-	local error = false
-	--when player buys an item, first check if its on the SWEP list
-	for k, v in pairs(weapons.GetList()) do
-		if equipment == v.ClassName then
-			net.Start("TotalStatistics_SendClientEquipmentName")
-            net.WriteString(v.PrintName)
-			net.WriteBool(error)
-            net.SendToServer()
-			return
-		elseif equipment == tostring(EQUIP_RADAR) then
-			net.Start("TotalStatistics_SendClientEquipmentName")
-            net.WriteString("Radar")
-			net.WriteBool(error)
-            net.SendToServer()
-			return
-		elseif equipment == tostring(EQUIP_ARMOR) then
-			net.Start("TotalStatistics_SendClientEquipmentName")
-            net.WriteString("Body Armor")
-			net.WriteBool(error)
-            net.SendToServer()
-			return
-		elseif equipment == tostring(EQUIP_DISGUISE) then
-			net.Start("TotalStatistics_SendClientEquipmentName")
-            net.WriteString("Disguise")
-            net.SendToServer()
-			return
-		end
+	local role = LocalPlayer():GetRole()
+	if is_item then
+		name = GetItemName(equipment, role)
+	else
+		name = GetWeaponName(equipment)
 	end
-	
-	--if its not on the SWEP list, then check the equipment item menu for the role
-	if LocalPlayer():GetRole() == ROLE_DETECTIVE then
-		for k, v in pairs (EquipmentItems[ROLE_DETECTIVE]) do
-			if equipment == v.id then
-				net.Start("TotalStatistics_SendClientEquipmentName")
-				net.WriteString(v.name)
-				net.WriteBool(error)
-				net.SendToServer()
-				return
-			end
-		end
-	elseif LocalPlayer():GetRole() == ROLE_TRAITOR then
-		for k, v in pairs (EquipmentItems[ROLE_TRAITOR]) do
-			if equipment == v.id then
-				net.Start("TotalStatistics_SendClientEquipmentName")
-				net.WriteString(v.name)
-				net.WriteBool(error)
-				net.SendToServer()
-				return
-			end
-		end
-	end
-	
-	--if we can't find it, let the server know
-	error = true
+
 	net.Start("TotalStatistics_SendClientEquipmentName")
-	net.WriteString(equipment)
-	net.WriteBool(error)
+	if name ~= equipment then
+		net.WriteString(name)
+		net.WriteBool(false)
+	else
+		net.WriteString(equipment)
+		net.WriteBool(true)
+	end
 	net.SendToServer()
 end)
